@@ -1,0 +1,11 @@
+<scene>
+    <objects>
+        <Sphere size="4">
+            <size>5</size>
+        <Sphere>
+    </objects>
+    <lights>
+    </lights>
+    <camera>
+    </camera>
+</scene>

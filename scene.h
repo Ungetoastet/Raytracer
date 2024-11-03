@@ -6,7 +6,7 @@
 
 using namespace std;
 
-class scene
+class Scene
 {
 private:
     /// @brief Parses the scene file into a scene object
@@ -18,14 +18,14 @@ private:
         XML_Node scene_root = parse_xml_bracket(content);
         if (scene_root.tag_name != "scene")
         {
-            std::cerr << "SCENE ERROR: Root node must be scene";
+            std::cerr << "SCENE ERROR: ROOT NODE MUST BE SCENE";
         }
     }
 
     vector<Object> objects;
 
 public:
-    scene(std::string path_to_file)
+    Scene(std::string path_to_file)
     {
         parseFromFile(path_to_file);
     }

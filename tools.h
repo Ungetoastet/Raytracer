@@ -5,6 +5,8 @@
 #include <vector>
 #include <map>
 
+#include "rendersettings.h"
+
 std::string readFile(std::string path_to_file)
 {
     std::ifstream file(path_to_file); // replace with your file path
@@ -22,7 +24,7 @@ std::string readFile(std::string path_to_file)
     }
     else
     {
-        std::cerr << "Unable to open file" << std::endl;
+        std::cerr << "FILE ERROR: UNABLE TO OPEN" << std::endl;
         return "";
     }
 }
@@ -180,4 +182,15 @@ XML_Node parse_xml_bracket(const std::string xml)
     }
 
     return XML_Node(tag_name, children, parameters);
+}
+
+std::string generate_PPM_header(RenderSettings rs)
+{
+    // https://de.wikipedia.org/wiki/Portable_Anymap#Kopfdaten
+
+    std::string header = "P3 ";                             // Magic number: Portable Pixmap (RGB), ASCII
+    header += std::to_string(rs.resolution[0]) + " ";       // Define width
+    header += std::to_string(rs.resolution[1]) + " ";       // Define height
+    header += std::to_string(1 << rs.channel_depth) + "\n"; // Define color depth - 1<<x = 2^x
+    return header;
 }

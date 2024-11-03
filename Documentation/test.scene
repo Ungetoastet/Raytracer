@@ -1,23 +1,23 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <scene>
     <objects>
+        <!-- size="4" ist kurz für scale="4,4,4" -->
         <!-- Einfache Kugel -->
-        <Sphere size="4" position="0,0,0" color="1,0,0" material="shinyRed" />
+        <Sphere size="4" position="0,0,0" material="shinyRed" />
 
         <!-- Würfel neben der Kugel -->
-        <Cube size="3" position="6,0,0" color="0,0,1" material="matteBlue" />
+        <Cube size="3" position="6,0,0" material="matteBlue" />
 
         <!-- Eine flache Bodenplatte -->
-        <Plane size="20" position="0,-5,0" rotation="90,0,0" color="0.8,0.8,0.8" material="matteGray" />
+        <Plane size="20" position="0,-5,0" rotation="90,0,0" material="matteGray" />
 
         <!--linke Wand-->
-        <Plane size="20" position="-10,0,0" rotation="0,90,0" color="0.8,0.8,0.8" material="matteGray" />
+        <Plane size="20" position="-10,0,0" rotation="0,90,0" material="matteGray" />
 
         <!--rechte Wand-->
-        <Plane size="20" position="10,0,0" rotation="0,-90,0" color="0.8,0.8,0.8" material="matteGray" />
+        <Plane size="20" position="10,0,0" rotation="0,-90,0" material="matteGray" />
 
         <!--Wand hinten-->
-        <Plane size="20" position="0,0,-10" rotation="0,0,0" color="0.8,0.8,0.8" material="matteGray" />
+        <Plane size="20" position="0,0,-10" rotation="0,0,0" material="matteGray" />
     </objects>
 
     <lights>

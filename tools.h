@@ -5,9 +5,7 @@
 #include <vector>
 #include <map>
 
-#include "rendersettings.h"
-
-std::string readFile(std::string path_to_file)
+std::string readFile(const std::string &path_to_file)
 {
     std::ifstream file(path_to_file); // replace with your file path
     std::string line;
@@ -29,7 +27,7 @@ std::string readFile(std::string path_to_file)
     }
 }
 
-std::string removeComments(const std::string xmlContent)
+std::string removeComments(const std::string &xmlContent)
 {
     std::string result;
     size_t pos = 0;
@@ -140,9 +138,17 @@ XML_Node parse_xml_bracket(const std::string xml)
     size_t closing_index = xml.find("</" + tag_name + ">", endPos);
     if (closing_index == std::string::npos)
     {
-        std::cerr << "SCENE ERROR: NO CLOSING TAG FOR " << tag_name << std::endl;
+        size_t closing_index = xml.find("/>", startPos);
+        if (closing_index == std::string::npos)
+        {
+            std::cerr << "SCENE ERROR: NO CLOSING TAG FOR " << tag_name << std::endl;
+        }
+        else
+        {
+            // Self closing node, no children
+            return XML_Node(tag_name, children, parameters);
+        }
     }
-
     std::string childstring = xml.substr(endPos + 1, closing_index - endPos - 1);
 
     // Find first bracket for children
@@ -153,6 +159,7 @@ XML_Node parse_xml_bracket(const std::string xml)
         if (child_tag_close == std::string::npos)
         {
             std::cerr << "SCENE ERROR: INCOMPLETE CHILD TAG" << std::endl;
+            break;
         }
 
         std::string child_tag = childstring.substr(child_start + 1, child_tag_close - child_start - 1);
@@ -167,30 +174,33 @@ XML_Node parse_xml_bracket(const std::string xml)
             child_tag_name = child_tag.substr(0, child_name_end);
         }
 
-        // Find the corresponding closing tag for this child
-        size_t child_end_tag = childstring.find("</" + child_tag_name + ">", child_tag_close);
-        if (child_end_tag == std::string::npos)
+        // Check if it's a self-closing tag (ends with "/>")
+        if (childstring[child_tag_close - 1] == '/')
         {
-            std::cerr << "SCENE ERROR: NO CLOSING TAG FOR CHILD " << child_tag_name << std::endl;
+            // Self-closing tag, add it directly
+            children.emplace_back(childstring.substr(child_start, child_tag_close - child_start + 1));
+            child_start = child_tag_close + 1; // Move past the self-closing tag
+        }
+        else
+        {
+            // Find the corresponding closing tag for this child
+            size_t child_end_tag = childstring.find("</" + child_tag_name + ">", child_tag_close);
+            if (child_end_tag == std::string::npos)
+            {
+                std::cerr << "SCENE ERROR: NO CLOSING TAG FOR CHILD " << child_tag_name << std::endl;
+                break;
+            }
+            else
+            {
+                // Extract the child node with opening and closing tags
+                children.emplace_back(childstring.substr(child_start, child_end_tag + child_tag_name.size() + 3 - child_start));
+                child_start = child_end_tag + child_tag_name.size() + 3; // Move past the closing tag
+            }
         }
 
-        // Extract the child node
-        children.emplace_back(childstring.substr(child_start, child_end_tag + child_tag_name.size() + 3 - child_start));
-
-        // Move to the next child
-        child_start = childstring.find("<", child_end_tag + child_tag_name.size() + 3);
+        // Find the next child starting from the new position
+        child_start = childstring.find("<", child_start);
     }
 
     return XML_Node(tag_name, children, parameters);
-}
-
-std::string generate_PPM_header(RenderSettings rs)
-{
-    // https://de.wikipedia.org/wiki/Portable_Anymap#Kopfdaten
-
-    std::string header = "P3 ";                             // Magic number: Portable Pixmap (RGB), ASCII
-    header += std::to_string(rs.resolution[0]) + " ";       // Define width
-    header += std::to_string(rs.resolution[1]) + " ";       // Define height
-    header += std::to_string(1 << rs.channel_depth) + "\n"; // Define color depth - 1<<x = 2^x
-    return header;
 }

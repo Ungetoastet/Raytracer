@@ -1,10 +1,6 @@
 #pragma once
 #include <string>
-
-#include "objects.h"
-#include "tools.h"
-
-using namespace std;
+#include <vector>
 
 class Scene
 {
@@ -14,7 +10,7 @@ private:
     /// @return Scene object
     void parseFromFile(std::string path_to_file)
     {
-        string content = removeComments(readFile(path_to_file));
+        std::string content = removeComments(readFile(path_to_file));
         XML_Node scene_root = parse_xml_bracket(content);
         if (scene_root.tag_name != "scene")
         {
@@ -22,9 +18,11 @@ private:
         }
     }
 
-    vector<Object> objects;
+    std::vector<Object> objects;
 
 public:
+    /// @brief Generates a scene object based on the .scene xml file
+    /// @param path_to_file
     Scene(std::string path_to_file)
     {
         parseFromFile(path_to_file);

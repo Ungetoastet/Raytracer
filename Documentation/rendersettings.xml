@@ -1,0 +1,5 @@
+<rendersettings>
+    <resolution x="720" y="420" />
+    <outputpath path="newrender.ppm" />
+    <depth b="16" />
+</rendersettings>

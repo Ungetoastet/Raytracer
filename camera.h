@@ -1,9 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <omp.h>
-
-#include "rendersettings.h"
-#include "tools.h"
+#include <sstream>
 
 using namespace std;
 
@@ -27,15 +25,24 @@ public:
         double starttime = omp_get_wtime();
         std::string ppm = generate_PPM_header(settings);
 
+        vector<std::string> rows(settings.resolution[1]);
+
+#pragma omp parallel for
         for (int y = 0; y < settings.resolution[1]; y++)
         {
+            std::ostringstream rowStream;
             for (int x = 0; x < settings.resolution[0]; x++)
             {
                 int r = ((float)x / settings.resolution[0]) * 255;
                 int b = ((float)y / settings.resolution[0]) * 255;
-                ppm += std::to_string(r) + " 0 " + std::to_string(b) + " ";
+                rowStream << r << " 0 " << b << " ";
             }
-            ppm += "\n";
+            rows[y] = rowStream.str();
+        }
+
+        for (const string &row : rows)
+        {
+            ppm += row + "\n";
         }
 
         std::cout << "Rendering done in " << (omp_get_wtime() - starttime) << std::endl;

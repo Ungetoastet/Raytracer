@@ -33,8 +33,8 @@ public:
             std::ostringstream rowStream;
             for (int x = 0; x < settings.resolution[0]; x++)
             {
-                int r = ((float)x / settings.resolution[0]) * 255;
-                int b = ((float)y / settings.resolution[0]) * 255;
+                int r = ((float)x / settings.resolution[0]) * (1 << settings.channel_depth);
+                int b = ((float)y / settings.resolution[0]) * (1 << settings.channel_depth);
                 rowStream << r << " 0 " << b << " ";
             }
             rows[y] = rowStream.str();

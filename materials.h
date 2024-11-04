@@ -7,12 +7,12 @@ class Material
 {
 protected:
     string id;
-    vector<float> color;
+    Vec3 color;
     float intensity;
     float shininess;
 
 public:
-    Material(string id, vector<float> color, float intensity, float shininess)
+    Material(string id, Vec3 color, float intensity, float shininess)
     {
         this->id = id;
         this->color = color;
@@ -21,14 +21,14 @@ public:
     }
 };
 
-class ShinyRed : Material{
-
+class ShinyRed : Material
+{
 };
 
-class MatteBlue : Material{
-
+class MatteBlue : Material
+{
 };
 
-class MatteGrey : Material{
-
+class MatteGrey : Material
+{
 };

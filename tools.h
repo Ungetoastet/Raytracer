@@ -5,9 +5,63 @@
 #include <vector>
 #include <map>
 
+#include <cmath>
+
+struct Vec3
+{
+    float x, y, z;
+
+    /// @brief Creates a zero vector
+    Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
+    Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+
+    Vec3 self() const { return {x, y, z}; }
+    Vec3 operator+(const Vec3 &other) const { return {x + other.x, y + other.y, z + other.z}; }
+    Vec3 operator-(const Vec3 &other) const { return {x - other.x, y - other.y, z - other.z}; }
+    Vec3 operator*(const float scale) const { return {x * scale, y * scale, z * scale}; };
+    bool operator==(const Vec3 &other) const
+    {
+        return std::fabs(x - other.x) < 0.0001f &&
+               std::fabs(y - other.y) < 0.0001f &&
+               std::fabs(z - other.z) < 0.0001f;
+    }
+    // Checks if two vectors are parellel
+    bool operator!=(const Vec3 &other)
+    {
+        Vec3 cross_product = this->cross(other);
+        return std::fabs(cross_product.x) < 0.0001f &&
+               std::fabs(cross_product.y) < 0.0001f &&
+               std::fabs(cross_product.z) < 0.0001f;
+    }
+    float dot(const Vec3 &other) const { return x * other.x + y * other.y + z * other.z; }
+    Vec3 cross(const Vec3 &other) const
+    {
+        return {
+            y * other.z - z * other.y,
+            z * other.x - x * other.z,
+            x * other.y - y * other.x};
+    }
+    Vec3 normalized() const
+    {
+        return self() * (1 / length());
+    }
+    float length() const
+    {
+        return sqrtf(norm2());
+    }
+    float norm2() const
+    {
+        return x * x + y * y + z * z;
+    }
+    std::string toString() const
+    {
+        return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
+    }
+};
+
 std::string readFile(const std::string &path_to_file)
 {
-    std::ifstream file(path_to_file); // replace with your file path
+    std::ifstream file(path_to_file);
     std::string line;
     std::string content;
 

@@ -3,6 +3,7 @@
         "*.pl": "prolog",
         "*.python": "python",
         "*.cu": "cuda-cpp",
+        "*.scene": "xml",
         "string": "cpp",
         "array": "cpp",
         "atomic": "cpp",
@@ -49,6 +50,7 @@
         "ostream": "cpp",
         "stdexcept": "cpp",
         "streambuf": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "sstream": "cpp"
     }
 }

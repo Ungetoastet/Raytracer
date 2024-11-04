@@ -6,12 +6,12 @@ using namespace std;
 class Object
 {
 protected:
-    vector<float> position;
-    vector<float> rotation;
-    vector<float> scale;
+    Vec3 position;
+    Vec3 rotation;
+    Vec3 scale;
 
 public:
-    Object(vector<float> position, vector<float> rotation, vector<float> scale)
+    Object(Vec3 position, Vec3 rotation, Vec3 scale)
     {
         this->position = position;
         this->rotation = rotation;

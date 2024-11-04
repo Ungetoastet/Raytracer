@@ -6,12 +6,12 @@ using namespace std;
 class Light
 {
 protected:
-    vector<float> position;
-    vector<float> color;
+    Vec3 position;
+    Vec3 color;
     float intensity;
 
 public:
-    Light(vector<float> position, vector<float> color, float intensity)
+    Light(Vec3 position, Vec3 color, float intensity)
     {
         this->position = position;
         this->color = color;
@@ -19,10 +19,10 @@ public:
     }
 };
 
-class PointLight : Light{
-
+class PointLight : Light
+{
 };
 
-class DirectionalLight : Light{
-
+class DirectionalLight : Light
+{
 };

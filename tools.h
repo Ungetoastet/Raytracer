@@ -258,3 +258,22 @@ XML_Node parse_xml_bracket(const std::string xml)
 
     return XML_Node(tag_name, children, parameters);
 }
+
+/// @brief Returns the color in the gradient
+/// @param points The colors inside the gradient
+/// @param marks The positions where the colors are in the gradient, must be sorted. First must be 0, last must be 1.
+/// @return Color inside gradient
+Vec3 get_gradient(std::vector<Vec3> &points, std::vector<float> &marks, float position)
+{
+    for (size_t i = 1; i < marks.size(); i++)
+    {
+        if (marks[i] > position)
+        {
+            float relative_diff = (position - marks[i - 1]) / (marks[i] - marks[i - 1]);
+            Vec3 diff = points[i] - points[i - 1];
+            return points[i - 1] + (diff * relative_diff);
+        }
+    }
+    std::cerr << "TOOL ERROR: INVALID GRADIENT POSITION: " << position << std::endl;
+    return {0, 0, 0};
+}

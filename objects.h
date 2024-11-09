@@ -19,14 +19,16 @@ public:
     }
 };
 
-class Sphere : Object
+class Sphere : public Object
+{
+public:
+    Sphere(Vec3 position, float size) : Object(position, {0, 0, 0}, {size, size, size}) {};
+};
+
+class Cube : public Object
 {
 };
 
-class Cube : Object
-{
-};
-
-class Plane : Object
+class Plane : public Object
 {
 };

@@ -3,7 +3,10 @@
 #include <omp.h>
 #include <sstream>
 #include <functional>
+
+#ifdef _WIN32
 #include <corecrt_math_defines.h> // Windows fix
+#endif
 
 using namespace std;
 
@@ -99,7 +102,7 @@ public:
 
         // Normalisierte Koordinaten für das Pixel berechnen
         float pixelNDC_X = (x + 0.5f) / renderSettings.resolution[0];
-        float pixelNDC_Y = (y + 0.5f) / renderSettings.resolution[0];
+        float pixelNDC_Y = (y + 0.5f) / renderSettings.resolution[1];
 
         // Koordinaten im Sichtfeld berechnen
         float pixelScreen_X = (2.0f * pixelNDC_X - 1.0f) * fovX * aspectRatio;

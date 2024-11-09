@@ -3,6 +3,7 @@
 #include <omp.h>
 #include <sstream>
 #include <functional>
+#include <corecrt_math_defines.h> // Windows fix
 
 using namespace std;
 

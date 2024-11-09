@@ -277,3 +277,10 @@ Vec3 get_gradient(std::vector<Vec3> &points, std::vector<float> &marks, float po
     std::cerr << "TOOL ERROR: INVALID GRADIENT POSITION: " << position << std::endl;
     return {0, 0, 0};
 }
+
+struct collision
+{
+    Vec3 point;
+    Vec3 normal;
+    Vec3 incoming_direction;
+};

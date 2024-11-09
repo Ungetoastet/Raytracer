@@ -15,7 +15,7 @@ int main()
 {
     Scene("./Documentation/test.scene");
     RenderSettings rendersettings = RenderSettings("./Documentation/rendersettings.xml");
-    Camera testcam = Camera({0, 0, -5}, {0, 0, 0}, 40, rendersettings);
+    Camera testcam = Camera({0, 0, -5}, {0, 0, 0}, 45, rendersettings);
 
     // Bind kernel
     auto boundKernel = std::bind(&Camera::kernel_skyboxOnly, &testcam, std::placeholders::_1, std::placeholders::_2);

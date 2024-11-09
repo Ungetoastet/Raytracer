@@ -131,15 +131,15 @@ public:
     }
 
     std::vector<Vec3> skybox_colors = {
-        {0.4157f, 0.4235f, 0.5098f},
-        {0.4157f, 0.4235f, 0.5098f},
+        {0.0f, 0.02f, 0.08f},
+        {0.3f, 0.2f, 0.5f},
         {0.8314f, 0.8118f, 0.7922f},
         {0.9331f, 0.8118f, 0.3922f},
         {0.8039f, 0.8667f, 0.9294f},
         {0.2353f, 0.2471f, 0.3686f}};
 
     std::vector<float> skybox_marks = {
-        0.0f, 0.2f, 0.46f, 0.52f, 0.7f, 1.0f};
+        0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.0f};
 
     Vec3 kernel_skyboxOnly(int x, int y)
     {

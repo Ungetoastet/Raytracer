@@ -85,7 +85,7 @@ public:
 
     /// @param x Pixel Coordinate
     /// @param y Pixel Coordinate
-    /// @return Light Ray that influences the pixel
+    /// @return Light Ray that influences the pixel, direction is normalized
     LightRay GenerateRayFromPixel(int x, int y)
     {
         // Richtung der Kamera berechnen
@@ -127,6 +127,25 @@ public:
     Vec3 kernel_rayTest(int x, int y)
     {
         LightRay lr = GenerateRayFromPixel(x, y);
-        return lr.direction.normalized();
+        return lr.direction;
+    }
+
+    std::vector<Vec3> skybox_colors = {
+        {0.4157f, 0.4235f, 0.5098f},
+        {0.4157f, 0.4235f, 0.5098f},
+        {0.8314f, 0.8118f, 0.7922f},
+        {0.9331f, 0.8118f, 0.3922f},
+        {0.8039f, 0.8667f, 0.9294f},
+        {0.2353f, 0.2471f, 0.3686f}};
+
+    std::vector<float> skybox_marks = {
+        0.0f, 0.2f, 0.46f, 0.52f, 0.7f, 1.0f};
+
+    Vec3 kernel_skyboxOnly(int x, int y)
+    {
+        LightRay lr = GenerateRayFromPixel(x, y);
+        const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+
+        return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
 };

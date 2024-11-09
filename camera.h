@@ -22,16 +22,18 @@ protected:
     Vec3 position;
     Vec3 lookAt;
     float fieldOfView;
+    Scene activeScene;
 
 public:
     /// @param position World position of the camera
     /// @param lookAt World position thats in the center of the rendered image
     /// @param fieldOfView Vertical FOV of the Camera in Degrees
-    Camera(const Vec3 &position, const Vec3 &lookAt, float fieldOfView, const RenderSettings &rs)
+    Camera(const Vec3 &position, const Vec3 &lookAt, float fieldOfView, const RenderSettings &rs, const Scene &activeScene)
     {
         this->position = position;
         this->lookAt = lookAt;
         this->fieldOfView = fieldOfView;
+        this->activeScene = activeScene;
         lookDirection = position - lookAt;
         renderSettings = rs;
     }
@@ -88,31 +90,31 @@ public:
     /// @return Light Ray that influences the pixel, direction is normalized
     LightRay GenerateRayFromPixel(int x, int y)
     {
-        // Richtung der Kamera berechnen
+        // Direction of the camera
         Vec3 forward = (lookAt - position).normalized();
 
-        // Rechtes und oberes Vektorsystem für die Kamera berechnen
+        // Right and up vectors for the camera coordinate system
         Vec3 right = forward.cross({0, 1, 0}).normalized();
         Vec3 up = right.cross(forward).normalized();
 
-        // Field of view in Bogenmaß umrechnen
+        // Field of view in radians
         float aspectRatio = static_cast<float>(renderSettings.resolution[0]) / renderSettings.resolution[1];
         float fovY = std::tan((fieldOfView * 0.5f) * (M_PI / 180.0f));
-        float fovX = std::tan((fieldOfView * aspectRatio * 0.5f) * (M_PI / 180.0f));
+        float fovX = fovY * aspectRatio; // Corrected this line
 
-        // Normalisierte Koordinaten für das Pixel berechnen
+        // Normalized device coordinates for the pixel
         float pixelNDC_X = (x + 0.5f) / renderSettings.resolution[0];
         float pixelNDC_Y = (y + 0.5f) / renderSettings.resolution[1];
 
-        // Koordinaten im Sichtfeld berechnen
-        float pixelScreen_X = (2.0f * pixelNDC_X - 1.0f) * fovX * aspectRatio;
+        // Screen space coordinates
+        float pixelScreen_X = (2.0f * pixelNDC_X - 1.0f) * fovX;
         float pixelScreen_Y = (1.0f - 2.0f * pixelNDC_Y) * fovY;
 
-        // Die Richtung des Rays basierend auf der Position und der Orientierung der Kamera berechnen
+        // Calculate the direction of the ray based on the camera's position and orientation
         Vec3 pixelWorld = forward + right * pixelScreen_X + up * pixelScreen_Y;
         Vec3 direction = pixelWorld.normalized();
 
-        // Rückgabe des generierten Rays
+        // Return the generated ray
         return LightRay{position, direction};
     }
 
@@ -144,6 +146,22 @@ public:
     Vec3 kernel_skyboxOnly(int x, int y)
     {
         LightRay lr = GenerateRayFromPixel(x, y);
+        const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+
+        return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+    }
+
+    Vec3 kernel_flatObjects(int x, int y)
+    {
+        LightRay lr = GenerateRayFromPixel(x, y);
+        for (Object *o : activeScene.objects)
+        {
+            Collision c = o->CheckCollision(lr);
+            if (c.valid)
+            {
+                return {1.0f, 0.0f, 0.0f};
+            }
+        }
         const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);

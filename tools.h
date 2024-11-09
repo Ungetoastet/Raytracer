@@ -278,8 +278,9 @@ Vec3 get_gradient(std::vector<Vec3> &points, std::vector<float> &marks, float po
     return {0, 0, 0};
 }
 
-struct collision
+struct Collision
 {
+    bool valid;
     Vec3 point;
     Vec3 normal;
     Vec3 incoming_direction;

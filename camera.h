@@ -166,4 +166,20 @@ public:
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
+    Vec3 kernel_normals(int x, int y)
+    {
+        LightRay lr = GenerateRayFromPixel(x, y);
+        for (Object *o : activeScene.objects)
+        {
+            Collision c = o->CheckCollision(lr);
+            if (c.valid)
+            {
+                Vec3 col = c.normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
+                return col;
+            }
+        }
+        const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+
+        return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+    }
 };

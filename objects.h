@@ -28,16 +28,31 @@ class Sphere : public Object
 {
 public:
     Sphere(Vec3 position, float size) : Object(position, {0, 0, 0}, {size, size, size}) {};
+
     Collision CheckCollision(LightRay ray) override
     {
-        // https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
         Vec3 center_origin_diff = ray.origin - position;
-        float delta = powf(ray.direction.dot(center_origin_diff), 2) - (center_origin_diff.norm2() - scale.x * scale.x);
-        if (delta <= 0)
+
+        float b = ray.direction.dot(center_origin_diff);
+        float c = center_origin_diff.norm2() - scale.x * scale.x;
+        float delta = b * b - c;
+
+        if (delta < 0)
         {
             return {false, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
         }
-        return {true, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}; // TODO
+
+        float dist = -b - sqrtf(delta);
+
+        if (dist < 0)
+        {
+            return {false, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+        }
+
+        Vec3 point = ray.origin + ray.direction * dist;
+        Vec3 normal = (point - position).normalized();
+
+        return {true, point, normal, ray.direction};
     }
 };
 

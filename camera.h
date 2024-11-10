@@ -4,10 +4,6 @@
 #include <sstream>
 #include <functional>
 
-#ifdef _WIN32
-#include <corecrt_math_defines.h> // Windows fix
-#endif
-
 using namespace std;
 
 class Camera

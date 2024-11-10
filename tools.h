@@ -57,6 +57,15 @@ struct Vec3
     {
         return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
     }
+    Vec3 mirrorTo(Vec3 &mirror) const
+    {
+        Vec3 normalizedmirror = mirror.normalized();
+        return self() - (normalizedmirror * self().dot(normalizedmirror)) * 2.0f;
+    }
+    Vec3 mirrorToNormalized(Vec3 &normalizedmirror)
+    {
+        return self() - (normalizedmirror * self().dot(normalizedmirror)) * 2.0f;
+    }
 };
 
 std::string readFile(const std::string &path_to_file)

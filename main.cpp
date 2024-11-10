@@ -18,12 +18,14 @@ int main()
     testscene.objects.push_back(&testsphere);
     Sphere testsphere2 = Sphere({2, 1, -1}, 0.5);
     testscene.objects.push_back(&testsphere2);
+    Sphere testsphere3 = Sphere({-1, 1, -1}, 0.5);
+    testscene.objects.push_back(&testsphere3);
 
     RenderSettings rendersettings = RenderSettings("./Documentation/rendersettings.xml");
     Camera testcam = Camera({0, 0, -5}, {0, 0, 0}, 45, rendersettings, testscene);
 
     // Bind kernel
-    auto boundKernel = std::bind(&Camera::kernel_normals, &testcam, std::placeholders::_1, std::placeholders::_2);
+    auto boundKernel = std::bind(&Camera::kernel_supershiny, &testcam, std::placeholders::_1, std::placeholders::_2);
     testcam.RenderImage(boundKernel);
     return 0;
 }

@@ -182,4 +182,33 @@ public:
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
+
+    /// @brief No scattering, no absorbsion, ten bounces
+    Vec3 kernel_supershiny(int x, int y)
+    {
+        LightRay lr = GenerateRayFromPixel(x, y);
+        for (int bounce = 0; bounce <= 10; bounce++)
+        {
+            bool hit = false;
+            for (Object *o : activeScene.objects)
+            {
+                Collision c = o->CheckCollision(lr);
+                if (c.valid)
+                {
+                    Vec3 reflected = c.incoming_direction.mirrorToNormalized(c.normal);
+                    lr = LightRay(c.point, reflected);
+                    hit = true;
+                    break;
+                }
+            }
+            if (hit)
+                continue;
+
+            const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+            return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+        }
+
+        // Max Bounces
+        return {1.0f, 0.0f, 0.0f};
+    }
 };

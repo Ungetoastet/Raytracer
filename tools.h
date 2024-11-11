@@ -66,6 +66,44 @@ struct Vec3
     {
         return self() - (normalizedmirror * self().dot(normalizedmirror)) * 2.0f;
     }
+    Vec3 rotate(Vec3 &radRotation) const
+    {
+        float sina = sinf(radRotation.x);
+        float sinb = sinf(radRotation.y);
+        float sing = sinf(radRotation.z);
+        float cosa = cosf(radRotation.x);
+        float cosb = cosf(radRotation.y);
+        float cosg = cosf(radRotation.z);
+
+        // https://en.wikipedia.org/wiki/Rotation_matrix#General_3D_rotations
+        // Components of rotation matrix
+        float rot11 = cosb * cosg;
+        float rot12 = sina * sinb * cosg - cosa * sing;
+        float rot13 = cosa * sinb * cosg + sina * sing;
+        float rot21 = cosb * sing;
+        float rot22 = sina * sinb * sing + cosa * cosg;
+        float rot23 = cosa * sinb * sing - sina * cosg;
+        float rot31 = -sinb;
+        float rot32 = sina * cosb;
+        float rot33 = cosa * cosb;
+
+        // Calculate components of vector rot*v
+        Vec3 res;
+        res.x = rot11 * x + rot12 * y + rot13 * z;
+        res.y = rot21 * x + rot22 * y + rot23 * z;
+        res.z = rot31 * x + rot32 * y + rot33 * z;
+        return res;
+    }
+    Vec3 radToEuler() const
+    {
+        float mult = 180.0f / M_PI;
+        return {x * mult, y * mult, z * mult};
+    }
+    Vec3 eulerToRad() const
+    {
+        float mult = M_PI / 180.0f;
+        return {x * mult, y * mult, z * mult};
+    }
 };
 
 std::string readFile(const std::string &path_to_file)
@@ -294,3 +332,5 @@ struct Collision
     Vec3 normal;
     Vec3 incoming_direction;
 };
+
+const Collision NO_COLLISION = {false, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};

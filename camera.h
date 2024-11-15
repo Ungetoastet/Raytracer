@@ -84,37 +84,71 @@ public:
         const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1;
 
         vector<std::string> rows(renderSettings.resolution[1]);
+        vector<float> load_rows = vector<float>(renderSettings.resolution[1] / 5);
+
         double starttime = omp_get_wtime();
 
-        vector<vector<Vec3>> pixels = vector<vector<Vec3>>(renderSettings.resolution[0], vector<Vec3>(renderSettings.resolution[1]));
+        // Compute load for each row
+#pragma omp parallel for
+        for (int y = 0; y < renderSettings.resolution[1] / 5; y++)
+        {
+            int row_start = omp_get_wtime();
+            for (int x = 0; x < renderSettings.resolution[0] / 5; x++)
+            {
+                Vec3 color = kernel(x, y) * calculatedChannelDepth;
+            }
+            load_rows[y] = (omp_get_wtime() - row_start) * (omp_get_wtime() - row_start);
+        }
+
+        auto [row_numbers, sorted_loads] = sortWithIndex(load_rows);
+
+        // Distribute load
+        vector<vector<int>> thread_row_table = vector<vector<int>>(omp_get_max_threads());
+        vector<float> thread_loads = vector<float>(omp_get_max_threads());
+
+        // Give biggest load to least loaded thread
+        for (size_t i = 0; i < row_numbers.size(); i++)
+        {
+            float smallestload = thread_loads[0];
+            size_t leastLoadedThread = 0;
+            for (size_t tnum = 1; tnum < thread_loads.size(); tnum++)
+            {
+                if (thread_loads[tnum] < smallestload)
+                {
+                    smallestload = thread_loads[tnum];
+                    leastLoadedThread = tnum;
+                }
+            }
+            thread_row_table[leastLoadedThread].push_back(row_numbers[i]);
+            thread_loads[leastLoadedThread] += sorted_loads[i];
+        }
+
+        std::cout << "Load balancing done in " << (omp_get_wtime() - starttime) << std::endl;
+        starttime = omp_get_wtime();
 
         // Compute color for each pixel
-#pragma omp parallel for collapse(2)
-        for (int x = 0; x < renderSettings.resolution[0]; x++)
+#pragma omp parallel
         {
-            for (int y = 0; y < renderSettings.resolution[1]; y++)
+            for (int rowbundle : thread_row_table[omp_get_thread_num()])
             {
-                kernel(x, y) * calculatedChannelDepth;
-                // pixels[x][y] = kernel(x, y) * calculatedChannelDepth;
+                size_t startrow = rowbundle * 5;
+                for (size_t y = startrow; y < startrow + 5; y++)
+                {
+                    std::ostringstream rowStream;
+                    for (int x = 0; x < renderSettings.resolution[0]; x++)
+                    {
+                        Vec3 color = kernel(x, y) * calculatedChannelDepth;
+                        rowStream << static_cast<int>(std::max(0.0f, std::min(color.x, 255.0f))) << " "
+                                  << static_cast<int>(std::max(0.0f, std::min(color.y, 255.0f))) << " "
+                                  << static_cast<int>(std::max(0.0f, std::min(color.z, 255.0f))) << " ";
+                    }
+                    rows[y] = rowStream.str();
+                }
             }
         }
 
         std::cout << "Rendering done in " << (omp_get_wtime() - starttime) << std::endl;
         starttime = omp_get_wtime();
-
-#pragma omp parallel
-        for (int y = 0; y < renderSettings.resolution[1]; y++)
-        {
-            std::ostringstream rowStream;
-            for (int x = 0; x < renderSettings.resolution[0]; x++)
-            {
-                Vec3 color = pixels[x][y];
-                rowStream << static_cast<int>(std::max(0.0f, std::min(color.x, 255.0f))) << " "
-                          << static_cast<int>(std::max(0.0f, std::min(color.y, 255.0f))) << " "
-                          << static_cast<int>(std::max(0.0f, std::min(color.z, 255.0f))) << " ";
-            }
-            rows[y] = rowStream.str();
-        }
 
         for (const string &row : rows)
         {

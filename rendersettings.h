@@ -13,10 +13,18 @@ private:
             if (key == "x")
             {
                 resolution[0] = std::stoi(value);
+                if (resolution[0] % 5 != 0)
+                {
+                    std::cerr << "RENDERSETTINGS ERROR: X AXIS RESOLUTION MUST BE DIVISIBLE BY 5" << std::endl;
+                }
             }
             else if (key == "y")
             {
                 resolution[1] = std::stoi(value);
+                if (resolution[1] % 5 != 0)
+                {
+                    std::cerr << "RENDERSETTINGS ERROR: Y AXIS RESOLUTION MUST BE DIVISIBLE BY 5" << std::endl;
+                }
             }
             else
             {

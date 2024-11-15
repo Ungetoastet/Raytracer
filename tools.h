@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <random>
+#include <algorithm>
 
 #include <cmath>
 
@@ -21,9 +22,10 @@ float random2(unsigned int *seed)
     return random1(seed) * 2 - 1.0;
 }
 
-struct Vec3
+struct alignas(16) Vec3
 {
     float x, y, z;
+    float padding;
 
     /// @brief Creates a zero vector
     Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
@@ -361,3 +363,25 @@ struct Collision
 };
 
 const Collision NO_COLLISION = {false, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+
+std::pair<std::vector<size_t>, std::vector<float>> sortWithIndex(const std::vector<float> &arr)
+{
+    std::vector<std::pair<float, size_t>> valueIndexPairs;
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+        valueIndexPairs.emplace_back(arr[i], i);
+    }
+
+    std::sort(valueIndexPairs.begin(), valueIndexPairs.end());
+
+    std::vector<float> sortedArray;
+    std::vector<size_t> ogIndices;
+
+    for (const auto &pair : valueIndexPairs)
+    {
+        sortedArray.push_back(pair.first);
+        ogIndices.push_back(pair.second);
+    }
+
+    return {ogIndices, sortedArray};
+}

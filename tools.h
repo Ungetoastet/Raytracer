@@ -4,8 +4,22 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <random>
 
 #include <cmath>
+
+/// @brief Gives a random float in range 0 to 1
+float random1(unsigned int *seed)
+{
+    *seed = (1140671485 * (*seed) + 12820163) % (1 << 24);
+    return ((float)(*seed)) / (1 << 24);
+}
+
+/// @brief Gives a random float in range -1 to 1
+float random2(unsigned int *seed)
+{
+    return random1(seed) * 2 - 1.0;
+}
 
 struct Vec3
 {
@@ -66,6 +80,9 @@ struct Vec3
     {
         return self() - (normalizedmirror * self().dot(normalizedmirror)) * 2.0f;
     }
+    /// @brief Rotate a vector around three axis
+    /// @param radRotation x, y, z Angles in radians
+    /// @return Rotated Vector
     Vec3 rotate(Vec3 &radRotation) const
     {
         float sina = sinf(radRotation.x);
@@ -103,6 +120,16 @@ struct Vec3
     {
         float mult = M_PI / 180.0f;
         return {x * mult, y * mult, z * mult};
+    }
+    /// @brief Randomly shift the vector by a tiny amount
+    /// @param strength How far the changed vector is from the original
+    Vec3 scatter(float strength, unsigned int *seed) const
+    {
+        Vec3 scattered;
+        scattered.x = x + (random2(seed) * strength);
+        scattered.y = y + (random2(seed) * strength);
+        scattered.z = z + (random2(seed) * strength);
+        return scattered.normalized();
     }
 };
 
@@ -314,7 +341,7 @@ Vec3 get_gradient(std::vector<Vec3> &points, std::vector<float> &marks, float po
 {
     for (size_t i = 1; i < marks.size(); i++)
     {
-        if (marks[i] > position)
+        if (marks[i] >= position)
         {
             float relative_diff = (position - marks[i - 1]) / (marks[i] - marks[i - 1]);
             Vec3 diff = points[i] - points[i - 1];

@@ -10,6 +10,48 @@ class Camera
 {
     using RenderKernel = std::function<Vec3(int x, int y)>;
 
+private:
+    /// @brief Seed for randomness
+    unsigned int rng_seed = 42;
+
+    /// @brief Generates the full recursion for a single ray
+    /// @param scene active scene
+    /// @param bounces How many times the ray can bounce before it is interrupted
+    /// @param scatter Into how many rays does the ray scatter on impact?
+    /// @param diffuse How strong is the scattering? To be moved to materials
+    /// @return
+    Vec3 FullTrace(LightRay lr, int bounces, int scatter, float diffuse)
+    {
+        // Check Object Collisions
+        for (Object *o : activeScene.objects)
+        {
+            Collision c = o->CheckCollision(lr);
+            if (c.valid)
+            {
+                // Scatter
+                if (bounces == 0)
+                {
+                    return {1, 0, 0};
+                }
+                Vec3 resColor = {0, 0, 0};
+                for (size_t s = 0; s < scatter; s++)
+                {
+                    Vec3 scatteredNormal = c.normal.scatter(diffuse, &rng_seed);
+                    // Vec3 scatteredNormal = c.normal;
+                    Vec3 reflected = c.incoming_direction.mirrorToNormalized(scatteredNormal);
+                    resColor = resColor + FullTrace(LightRay(c.point, reflected), bounces - 1, scatter, diffuse);
+                }
+                return resColor * (1.0f / scatter);
+            }
+            else
+            {
+                continue;
+            }
+        }
+        float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+        return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+    }
+
 protected:
     Vec3 lookDirection;
     int pixelCenterX;
@@ -137,7 +179,7 @@ public:
         {0.2353f, 0.2471f, 0.3686f}};
 
     std::vector<float> skybox_marks = {
-        0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.0f};
+        0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.1f};
 
     Vec3 kernel_skyboxOnly(int x, int y)
     {
@@ -198,7 +240,9 @@ public:
                 }
             }
             if (hit)
+            {
                 continue;
+            }
 
             const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
             return get_gradient(skybox_colors, skybox_marks, gradient_pos);
@@ -206,5 +250,10 @@ public:
 
         // Max Bounces
         return {1.0f, 0.0f, 0.0f};
+    }
+
+    Vec3 kernel_scattertest(int x, int y)
+    {
+        return FullTrace(GenerateRayFromPixel(x, y), 5, 10, 0.01f);
     }
 };

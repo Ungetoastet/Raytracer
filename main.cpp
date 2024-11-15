@@ -27,7 +27,7 @@ int main()
     Camera testcam = Camera({0, 0, -5}, {0, 0, 0}, 45, rendersettings, testscene);
 
     // Bind kernel
-    auto boundKernel = std::bind(&Camera::kernel_supershiny, &testcam, std::placeholders::_1, std::placeholders::_2);
+    auto boundKernel = std::bind(&Camera::kernel_scattertest, &testcam, std::placeholders::_1, std::placeholders::_2);
     testcam.RenderImage(boundKernel);
     return 0;
 }

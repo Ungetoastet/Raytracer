@@ -8,6 +8,7 @@ using namespace std;
 
 class Camera
 {
+    // Determines the color value for each pixel
     using RenderKernel = std::function<Vec3(int x, int y)>;
 
 private:
@@ -37,10 +38,10 @@ private:
                 for (size_t s = 0; s < scatter; s++)
                 {
                     Vec3 scatteredNormal = c.normal.scatter(diffuse, &rng_seed);
-                    // Vec3 scatteredNormal = c.normal;
                     Vec3 reflected = c.incoming_direction.mirrorToNormalized(scatteredNormal);
                     resColor = resColor + FullTrace(LightRay(c.point, reflected), bounces - 1, scatter, diffuse);
                 }
+
                 return resColor * (1.0f / scatter);
             }
             else
@@ -79,19 +80,35 @@ public:
     /// @brief Renders the complete image using the given settings
     void RenderImage(RenderKernel kernel)
     {
-        double starttime = omp_get_wtime();
         std::string ppm = generate_PPM_header(renderSettings);
         const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1;
 
         vector<std::string> rows(renderSettings.resolution[1]);
+        double starttime = omp_get_wtime();
 
-#pragma omp parallel for
+        vector<vector<Vec3>> pixels = vector<vector<Vec3>>(renderSettings.resolution[0], vector<Vec3>(renderSettings.resolution[1]));
+
+        // Compute color for each pixel
+#pragma omp parallel for collapse(2)
+        for (int x = 0; x < renderSettings.resolution[0]; x++)
+        {
+            for (int y = 0; y < renderSettings.resolution[1]; y++)
+            {
+                kernel(x, y) * calculatedChannelDepth;
+                // pixels[x][y] = kernel(x, y) * calculatedChannelDepth;
+            }
+        }
+
+        std::cout << "Rendering done in " << (omp_get_wtime() - starttime) << std::endl;
+        starttime = omp_get_wtime();
+
+#pragma omp parallel
         for (int y = 0; y < renderSettings.resolution[1]; y++)
         {
             std::ostringstream rowStream;
             for (int x = 0; x < renderSettings.resolution[0]; x++)
             {
-                Vec3 color = kernel(x, y) * calculatedChannelDepth;
+                Vec3 color = pixels[x][y];
                 rowStream << static_cast<int>(std::max(0.0f, std::min(color.x, 255.0f))) << " "
                           << static_cast<int>(std::max(0.0f, std::min(color.y, 255.0f))) << " "
                           << static_cast<int>(std::max(0.0f, std::min(color.z, 255.0f))) << " ";
@@ -103,8 +120,6 @@ public:
         {
             ppm += row + "\n";
         }
-
-        std::cout << "Rendering done in " << (omp_get_wtime() - starttime) << std::endl;
 
         std::ofstream file(renderSettings.output_path);
 
@@ -118,7 +133,7 @@ public:
             std::cerr << "RENDER ERROR: UNABLE TO WRITE" << std::endl;
         }
 
-        std::cout << "Writing to file done." << std::endl;
+        std::cout << "Writing to file done in " << omp_get_wtime() - starttime << std::endl;
 
         return;
     }

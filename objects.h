@@ -30,7 +30,6 @@ public:
 
     Collision CheckCollision(LightRay ray) override
     {
-        std::cout << "Pre coll sphere" << std::endl;
         Vec3 center_origin_diff = ray.origin - position;
 
         float b = ray.direction.dot(center_origin_diff);
@@ -77,7 +76,6 @@ public:
 
     Collision CheckCollision(LightRay ray) override
     {
-        std::cout << "Pre coll plane" << std::endl;
         float divider = ray.direction.dot(normal);
         if (abs(divider) <= 0.01)
         {

@@ -385,3 +385,57 @@ std::pair<std::vector<size_t>, std::vector<float>> sortWithIndex(const std::vect
 
     return {ogIndices, sortedArray};
 }
+
+// Funktion, die einen String in einen vec3 umwandelt
+Vec3 stringToVec3(const std::string &str)
+{
+    std::stringstream ss(str);
+    std::vector<float> values;
+    std::string temp;
+
+    // String mit ',' als Trennzeichen parsen
+    while (std::getline(ss, temp, ','))
+    {
+        try
+        {
+            values.push_back(std::stof(temp)); // String in Float umwandeln
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "TOOL ERROR: ERROR PARSING VALUE" << temp << std::endl;
+        }
+    }
+
+    // Sicherstellen, dass genau 3 Werte vorliegen
+    if (values.size() != 3)
+    {
+        throw std::invalid_argument("TOOL ERROR: INVALID STRING, MUST CONTAIN THREE VALUES");
+    }
+
+    // vec3 mit den geparsten Werten erstellen
+    return Vec3(values[0], values[1], values[2]);
+}
+
+float stringToFloat(const std::string &str)
+{
+    try
+    {
+        size_t pos;
+        float value = std::stof(str, &pos); // String in float konvertieren
+
+        // Prüfen, ob der gesamte String verarbeitet wurde
+        if (pos != str.length())
+        {
+            throw std::invalid_argument("Ungültige Eingabe: Zusätzliche Zeichen gefunden.");
+        }
+        return value;
+    }
+    catch (const std::invalid_argument &e)
+    {
+        throw std::invalid_argument("Ungültige Eingabe: Der String kann nicht in einen Float umgewandelt werden.");
+    }
+    catch (const std::out_of_range &e)
+    {
+        throw std::out_of_range("Ungültige Eingabe: Der Wert liegt außerhalb des gültigen Float-Bereichs.");
+    }
+}

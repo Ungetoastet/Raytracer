@@ -360,6 +360,7 @@ struct Collision
     Vec3 point;
     Vec3 normal;
     Vec3 incoming_direction;
+    float distance;
 };
 
 const Collision NO_COLLISION = {false, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};

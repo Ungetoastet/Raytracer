@@ -5,30 +5,25 @@ using namespace std;
 
 class Material
 {
-protected:
+public:
     string id;
     Vec3 color;
     float intensity;
-    float shininess;
+    float diffuse;
 
-public:
-    Material(string id, Vec3 color, float intensity, float shininess)
+    Material()
+    {
+    }
+
+    /// @param id Name of the material, should be unique
+    /// @param color Base color of the material
+    /// @param intensity How strong is the reflection visible
+    /// @param diffuse How matte is the material
+    Material(string id, Vec3 color, float intensity, float diffuse)
     {
         this->id = id;
         this->color = color;
         this->intensity = intensity;
-        this->shininess = shininess;
+        this->diffuse = diffuse;
     }
-};
-
-class ShinyRed : Material
-{
-};
-
-class MatteBlue : Material
-{
-};
-
-class MatteGrey : Material
-{
 };

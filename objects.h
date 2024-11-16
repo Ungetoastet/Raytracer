@@ -11,23 +11,25 @@ protected:
     Vec3 scale;
 
 public:
-    Object(Vec3 position, Vec3 rotation, Vec3 scale)
+    Material mat;
+    Object(Vec3 position, Vec3 rotation, Vec3 scale, Material mat)
     {
         this->position = position;
         this->rotation = rotation;
         this->scale = scale;
+        this->mat = mat;
     }
     virtual Collision CheckCollision(LightRay ray)
     {
         std::cerr << "COLLISION ERROR: CANNOT CALCULATE COLLISION FOR OBJECT" << std::endl;
-        return {false, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+        return NO_COLLISION;
     };
 };
 
 class Sphere : public Object
 {
 public:
-    Sphere(Vec3 position, float size) : Object(position, {0, 0, 0}, {size, size, size}) {};
+    Sphere(Vec3 position, float size, Material mat) : Object(position, {0, 0, 0}, {size, size, size}, mat) {};
 
     Collision CheckCollision(LightRay ray) override
     {
@@ -52,7 +54,7 @@ public:
         Vec3 point = ray.origin + ray.direction * dist;
         Vec3 normal = (point - position).normalized();
 
-        return {true, point, normal, ray.direction};
+        return {true, point, normal, ray.direction, dist};
     }
 };
 
@@ -68,7 +70,7 @@ private:
     Vec3 localY;
 
 public:
-    Plane(Vec3 position, Vec3 rotation, Vec3 scale) : Object(position, rotation, scale)
+    Plane(Vec3 position, Vec3 rotation, Vec3 scale, Material mat) : Object(position, rotation, scale, mat)
     {
         normal = Vec3{0.0f, 0.0f, 1.0f}.rotate(rotation).normalized();
         localX = Vec3{1.0f, 0.0f, 0.0f}.rotate(rotation).normalized();
@@ -102,6 +104,6 @@ public:
             return NO_COLLISION;
         }
 
-        return {true, point, normal, ray.direction};
+        return {true, point, normal, ray.direction, dist};
     }
 };

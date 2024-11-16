@@ -39,7 +39,7 @@
         <!-- Material für eine glänzende rote Kugel -->
         <material id="shinyRed">
             <diffuse color="1,0,0" />
-            <specular color="1,1,1" intensity="0.8" shininess="50" />
+            <specular color="1,1,1" intensity="0.8" diffuse="50" />
         </material>
 
         <!-- Material für eine matte blaue Oberfläche -->
@@ -51,7 +51,7 @@
         <!-- Material für eine graue matte Bodenfläche -->
         <material id="matteGray">
             <diffuse color="0.8,0.8,0.8" />
-            <specular color="0.2,0.2,0.2" intensity="0.2" shininess="10" />
+            <specular color="0.2,0.2,0.2" intensity="0.2" diffuse="10" />
         </material>
     </materials>
 </scene>

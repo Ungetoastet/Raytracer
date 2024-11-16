@@ -19,38 +19,56 @@ private:
     /// @param scene active scene
     /// @param bounces How many times the ray can bounce before it is interrupted
     /// @param scatter Into how many rays does the ray scatter on impact?
-    /// @param diffuse How strong is the scattering? To be moved to materials
     /// @return
-    Vec3 FullTrace(LightRay lr, int bounces, int scatter, float diffuse)
+    Vec3 FullTrace(LightRay lr, int bounces, int scatter)
     {
         // Check Object Collisions
+        Object *closestObject;
+        Collision closestCollision;
+        float closestDistance = 9999;
+        bool hitObj = false;
+
         for (Object *o : activeScene.objects)
         {
             Collision c = o->CheckCollision(lr);
-            if (c.valid)
+            if (c.valid && c.distance < closestDistance)
             {
-                // Scatter
-                if (bounces == 0)
-                {
-                    return {1, 0, 0};
-                }
-                Vec3 resColor = {0, 0, 0};
-                for (size_t s = 0; s < scatter; s++)
-                {
-                    Vec3 scatteredNormal = c.normal.scatter(diffuse, &rng_seed);
-                    Vec3 reflected = c.incoming_direction.mirrorToNormalized(scatteredNormal);
-                    resColor = resColor + FullTrace(LightRay(c.point, reflected), bounces - 1, scatter, diffuse);
-                }
-
-                return resColor * (1.0f / scatter);
+                closestDistance = c.distance;
+                closestObject = o;
+                closestCollision = c;
+                hitObj = true;
             }
             else
             {
                 continue;
             }
         }
-        float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
-        return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+
+        if (hitObj)
+        {
+            float diffuse = closestObject->mat.diffuse;
+            float intensity = closestObject->mat.intensity;
+            // Scatter
+            if (bounces == 0)
+            {
+                return {1, 0, 0};
+            }
+            Vec3 resColor = {0, 0, 0};
+            for (size_t s = 0; s < scatter; s++)
+            {
+                Vec3 scatteredNormal = closestCollision.normal.scatter(diffuse, &rng_seed);
+                Vec3 reflected = closestCollision.incoming_direction.mirrorToNormalized(scatteredNormal);
+                Vec3 hit_color = (closestObject->mat.color * (1 - intensity)) + (FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatter) * intensity);
+                resColor = resColor + hit_color;
+            }
+
+            return resColor * (1.0f / scatter);
+        }
+        else
+        {
+            float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+            return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+        }
     }
 
 protected:
@@ -303,6 +321,6 @@ public:
 
     Vec3 kernel_scattertest(int x, int y)
     {
-        return FullTrace(GenerateRayFromPixel(x, y), 5, 10, 0.01f);
+        return FullTrace(GenerateRayFromPixel(x, y), 5, 10);
     }
 };

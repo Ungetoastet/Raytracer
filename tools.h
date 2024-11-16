@@ -25,7 +25,7 @@ float random2(unsigned int *seed)
 struct alignas(16) Vec3
 {
     float x, y, z;
-    float padding;
+    float padding = 0;
 
     /// @brief Creates a zero vector
     Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
@@ -363,7 +363,7 @@ struct Collision
     float distance;
 };
 
-const Collision NO_COLLISION = {false, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+const Collision NO_COLLISION = {false, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0};
 
 std::pair<std::vector<size_t>, std::vector<float>> sortWithIndex(const std::vector<float> &arr)
 {

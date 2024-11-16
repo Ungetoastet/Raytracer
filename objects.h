@@ -12,6 +12,7 @@ protected:
 
 public:
     Material mat;
+    virtual ~Object() = default;
     Object(Vec3 position, Vec3 rotation, Vec3 scale, Material mat)
     {
         this->position = position;
@@ -19,11 +20,7 @@ public:
         this->scale = scale;
         this->mat = mat;
     }
-    virtual Collision CheckCollision(LightRay ray)
-    {
-        std::cerr << "COLLISION ERROR: CANNOT CALCULATE COLLISION FOR OBJECT" << std::endl;
-        return NO_COLLISION;
-    };
+    virtual Collision CheckCollision(LightRay ray) = 0;
 };
 
 class Sphere : public Object
@@ -33,6 +30,7 @@ public:
 
     Collision CheckCollision(LightRay ray) override
     {
+        std::cout << "Pre coll sphere" << std::endl;
         Vec3 center_origin_diff = ray.origin - position;
 
         float b = ray.direction.dot(center_origin_diff);
@@ -77,8 +75,9 @@ public:
         localY = Vec3{0.0f, 1.0f, 0.0f}.rotate(rotation).normalized();
     };
 
-    Collision CheckCollision(LightRay ray)
+    Collision CheckCollision(LightRay ray) override
     {
+        std::cout << "Pre coll plane" << std::endl;
         float divider = ray.direction.dot(normal);
         if (abs(divider) <= 0.01)
         {

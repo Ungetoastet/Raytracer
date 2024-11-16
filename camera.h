@@ -54,7 +54,7 @@ private:
                 return {1, 0, 0};
             }
             Vec3 resColor = {0, 0, 0};
-            for (size_t s = 0; s < scatter; s++)
+            for (int s = 0; s < scatter; s++)
             {
                 Vec3 scatteredNormal = closestCollision.normal.scatter(diffuse, &rng_seed);
                 Vec3 reflected = closestCollision.incoming_direction.mirrorToNormalized(scatteredNormal);

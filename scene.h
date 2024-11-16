@@ -117,7 +117,7 @@ private:
             XML_Node current_materials = parse_xml_bracket(material);
             if (current_materials.tag_name == "material")
             {
-                CreateMaterialS(current_materials.parameters, current_materials.children);
+                CreateMaterials(current_materials.parameters, current_materials.children);
             }
             else
             {
@@ -369,27 +369,17 @@ private:
         float fieldOfView(val);
     }
 
-    void CreateSphere(std::map<std::string, std::string> sphereParams)
+    void CreateMaterials(std::map<std::string, std::string> materialsParams)
     {
         // Variablen erstellen
-        Vec3 position;
-        float size;
-        string material_id;
-        for (const auto &[key, value] : sphereParams)
+        string materialID;
+        for (const auto &[key, value] : materialsParams)
         {
-            if (key == "position")
+            if (key == "material")
             {
                 // Position speichern in variable;
                 // String zu vektor methode aufrufen (musst du noch schreiben (lassen))
-                position = stringToVec3(value);
-            }
-            else if (key == "size")
-            {
-                size = stringToFloat(value);
-            }
-            else if (key == "material")
-            {
-                material_id = value;
+                materialID = value;
             }
             else
             {
@@ -397,7 +387,7 @@ private:
             }
         }
         // Variablen an constructor übergeben
-        Sphere sphere(position, size);
+        Material material(materialID);
     }
 
 public:

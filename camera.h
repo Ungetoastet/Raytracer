@@ -102,7 +102,7 @@ public:
         const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1;
 
         vector<std::string> rows(renderSettings.resolution[1]);
-        vector<float> load_rows = vector<float>(renderSettings.resolution[1] / 5);
+        vector<float> load_rows(renderSettings.resolution[1] / 5);
 
         double starttime = omp_get_wtime();
 
@@ -113,9 +113,9 @@ public:
             int row_start = omp_get_wtime();
             for (int x = 0; x < renderSettings.resolution[0] / 5; x++)
             {
-                Vec3 color = kernel(x, y) * calculatedChannelDepth;
+                kernel(x * 5, y * 5);
             }
-            load_rows[y] = (omp_get_wtime() - row_start) * (omp_get_wtime() - row_start);
+            load_rows[y] = omp_get_wtime() - row_start;
         }
 
         auto [row_numbers, sorted_loads] = sortWithIndex(load_rows);

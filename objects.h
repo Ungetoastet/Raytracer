@@ -88,14 +88,15 @@ public:
             return NO_COLLISION;
         }
         Vec3 point = ray.origin + ray.direction * dist;
+        Vec3 diff = point - position;
 
-        float x_dist = (point - position).cross(localY).length();
+        float x_dist = diff.cross(localY).length();
         if (abs(x_dist) > scale.x)
         {
             return NO_COLLISION;
         }
 
-        float y_dist = (point - position).cross(localX).length();
+        float y_dist = diff.cross(localX).length();
         if (abs(y_dist) > scale.y)
         {
             return NO_COLLISION;

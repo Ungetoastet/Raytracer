@@ -59,7 +59,7 @@ struct alignas(16) Vec3
     }
     Vec3 normalized() const
     {
-        // Fast inverse sqrt
+        // https://en.wikipedia.org/wiki/Fast_inverse_square_root
         float y = norm2();
         float x2 = y * 0.5;
         long i;
@@ -88,7 +88,7 @@ struct alignas(16) Vec3
         Vec3 normalizedmirror = mirror.normalized();
         return self() - (normalizedmirror * self().dot(normalizedmirror)) * 2.0f;
     }
-    Vec3 mirrorToNormalized(Vec3 &normalizedmirror)
+    Vec3 mirrorToNormalized(Vec3 &normalizedmirror) const
     {
         return self() - (normalizedmirror * self().dot(normalizedmirror)) * 2.0f;
     }

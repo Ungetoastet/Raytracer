@@ -104,3 +104,20 @@ public:
         return {true, point, normal, ray.direction, dist};
     }
 };
+
+Collision checkWithSafeDowncast(Object *o, LightRay &lr)
+{
+    Sphere *s = dynamic_cast<Sphere *>(o);
+    if (s)
+    {
+        return s->CheckCollision(lr);
+    }
+    Plane *p = static_cast<Plane *>(o);
+    if (p)
+    {
+        return p->CheckCollision(lr);
+    }
+
+    std::cerr << "CORRUPTED OBJECT POINTER" << std::endl;
+    return NO_COLLISION;
+}

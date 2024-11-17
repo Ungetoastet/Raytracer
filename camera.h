@@ -30,7 +30,7 @@ private:
 
         for (Object *o : activeScene.objects)
         {
-            Collision c = o->CheckCollision(lr);
+            Collision c = checkWithSafeDowncast(o, lr);
             if (c.valid && c.distance < closestDistance)
             {
                 closestDistance = c.distance;
@@ -98,6 +98,7 @@ public:
     /// @brief Renders the complete image using the given settings
     void RenderImage(RenderKernel kernel)
     {
+        std::cout << "Starting render..." << std::endl;
         std::string ppm = generate_PPM_header(renderSettings);
         const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1;
 
@@ -145,7 +146,7 @@ public:
         starttime = omp_get_wtime();
 
         // Compute color for each pixel
-#pragma omp parallel
+#pragma omp parallel firstprivate(activeScene)
         {
             for (int rowbundle : thread_row_table[omp_get_thread_num()])
             {
@@ -261,7 +262,7 @@ public:
         LightRay lr = GenerateRayFromPixel(x, y);
         for (Object *o : activeScene.objects)
         {
-            Collision c = o->CheckCollision(lr);
+            Collision c = checkWithSafeDowncast(o, lr);
             if (c.valid)
             {
                 return {1.0f, 0.0f, 0.0f};
@@ -276,7 +277,7 @@ public:
         LightRay lr = GenerateRayFromPixel(x, y);
         for (Object *o : activeScene.objects)
         {
-            Collision c = o->CheckCollision(lr);
+            Collision c = checkWithSafeDowncast(o, lr);
             if (c.valid)
             {
                 Vec3 col = c.normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
@@ -297,7 +298,8 @@ public:
             bool hit = false;
             for (Object *o : activeScene.objects)
             {
-                Collision c = o->CheckCollision(lr);
+                Collision c = checkWithSafeDowncast(o, lr);
+
                 if (c.valid)
                 {
                     Vec3 reflected = c.incoming_direction.mirrorToNormalized(c.normal);

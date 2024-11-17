@@ -126,26 +126,6 @@ private:
         }
     }
 
-    void ParseMaterial(std::vector<string> materialStrings)
-    {
-        for (std::string material : materialStrings)
-        {
-            XML_Node current_material = parse_xml_bracket(material);
-            if (current_material.tag_name == "diffuse")
-            {
-                CreateDiffuse(current_material.parameters);
-            }
-            else if (current_material.tag_name == "specular")
-            {
-                CreateSpecular(current_material.parameters);
-            }
-            else
-            {
-                std::cerr << "SCENE ERROR: UNKNOWN MATERIAL" << current_materials.tag_name << std::endl;
-            }
-        }
-    }
-
     void CreateSphere(std::map<std::string, std::string> sphereParams)
     {
         // Variablen erstellen

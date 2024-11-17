@@ -141,7 +141,7 @@ struct alignas(16) Vec3
         scattered.x = x + (random2(seed) * strength);
         scattered.y = y + (random2(seed) * strength);
         scattered.z = z + (random2(seed) * strength);
-        return scattered.normalized();
+        return scattered;
     }
 };
 

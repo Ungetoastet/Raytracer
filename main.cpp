@@ -17,10 +17,11 @@ int main()
 
     Material test_red = Material("testred", Vec3(1.0, 0.0, 0.0), 0.4, 0.1);
     Material test_blue = Material("testblue", Vec3(0.3, 0.3, 1.0), 0.3, 0.05);
-    Material mirror = Material("mirror", Vec3(1, 1, 1), 1, 0.01);
+    Material metal = Material("metal", Vec3(1, 1, 1), 1, 0.5);
+    Material mirror = Material("mirror", Vec3(1, 1, 1), 1, 0.005);
     Material shiny_black = Material("shinyblack", Vec3(0.1, 0.1, 0.1), 0.3, 0.01);
 
-    Sphere testsphere = Sphere({0, 0, 0}, 1, mirror);
+    Sphere testsphere = Sphere({0, 0, 0}, 1, metal);
     testscene.objects.push_back(&testsphere);
     Sphere testsphere2 = Sphere({2, 1, -1}, 0.5, test_blue);
     testscene.objects.push_back(&testsphere2);

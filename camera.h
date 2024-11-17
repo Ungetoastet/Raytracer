@@ -24,9 +24,8 @@ private:
     {
         // Check Object Collisions
         Object *closestObject;
-        Collision closestCollision;
+        Collision closestCollision = NO_COLLISION;
         float closestDistance = 9999;
-        bool hitObj = false;
 
         for (Object *o : activeScene.objects)
         {
@@ -36,7 +35,6 @@ private:
                 closestDistance = c.distance;
                 closestObject = o;
                 closestCollision = c;
-                hitObj = true;
             }
             else
             {
@@ -44,7 +42,7 @@ private:
             }
         }
 
-        if (hitObj)
+        if (closestCollision.valid)
         {
             float diffuse = closestObject->mat.diffuse;
             float intensity = closestObject->mat.intensity;
@@ -56,8 +54,8 @@ private:
             Vec3 resColor = {0, 0, 0};
             for (int s = 0; s < scatter; s++)
             {
-                Vec3 scatteredNormal = closestCollision.normal.scatter(diffuse, &rng_seed);
-                Vec3 reflected = closestCollision.incoming_direction.mirrorToNormalized(scatteredNormal);
+                Vec3 reflected = closestCollision.incoming_direction.mirrorToNormalized(closestCollision.normal) + Vec3{0, 0, 0}.scatter(diffuse, &rng_seed);
+                reflected = reflected.normalized();
                 Vec3 hit_color = (closestObject->mat.color * (1 - intensity)) + (FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatter) * intensity);
                 resColor = resColor + hit_color;
             }

@@ -43,7 +43,7 @@ public:
 
         float dist = -b - sqrtf(delta);
 
-        if (dist < 0)
+        if (dist <= 0.01)
         {
             return NO_COLLISION;
         }

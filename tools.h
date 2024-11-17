@@ -396,3 +396,15 @@ std::pair<std::vector<size_t>, std::vector<float>> sortWithIndex(const std::vect
 
     return {ogIndices, sortedArray};
 }
+
+std::string get_progress_bar(float progress, int width = 50)
+{
+    int filled_length = static_cast<int>(progress * width);
+    int unfilled_length = width - filled_length;
+
+    // Create the progress bar string
+    std::string bar(filled_length, '#');
+    bar.append(unfilled_length, ' ');
+
+    return bar;
+}

@@ -1,6 +1,6 @@
 #include <vector>
 
-class LightRay
+class alignas(32) LightRay
 {
 public:
     Vec3 origin;

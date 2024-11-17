@@ -145,6 +145,7 @@ public:
         starttime = omp_get_wtime();
 
         // Compute color for each pixel
+        int rows_done = 0;
 #pragma omp parallel
         {
             for (int rowbundle : thread_row_table[omp_get_thread_num()])
@@ -152,20 +153,27 @@ public:
                 size_t startrow = rowbundle * 5;
                 for (size_t y = startrow; y < startrow + 5; y++)
                 {
-                    std::ostringstream rowStream;
+                    std::string row;
+                    row.reserve(renderSettings.resolution[0] * 3 * 4);
                     for (int x = 0; x < renderSettings.resolution[0]; x++)
                     {
                         Vec3 color = kernel(x, y) * calculatedChannelDepth;
-                        rowStream << static_cast<int>(std::max(0.0f, std::min(color.x, 255.0f))) << " "
-                                  << static_cast<int>(std::max(0.0f, std::min(color.y, 255.0f))) << " "
-                                  << static_cast<int>(std::max(0.0f, std::min(color.z, 255.0f))) << " ";
+                        int r = static_cast<int>(color.x);
+                        int g = static_cast<int>(color.y);
+                        int b = static_cast<int>(color.z);
+                        row.append(std::to_string(r)).append(" ").append(std::to_string(g)).append(" ").append(std::to_string(b)).append(" ");
                     }
-                    rows[y] = rowStream.str();
+                    rows[y] = row;
+                }
+#pragma omp critical
+                {
+                    rows_done += 5;
+                    std::cout << "\r[" << get_progress_bar((float)rows_done / renderSettings.resolution[1]) << "]" << std::flush;
                 }
             }
         }
 
-        std::cout << "Rendering done in " << (omp_get_wtime() - starttime) << std::endl;
+        std::cout << "\nRendering done in " << (omp_get_wtime() - starttime) << std::endl;
         starttime = omp_get_wtime();
 
         for (const string &row : rows)
@@ -193,7 +201,8 @@ public:
     /// @param x Pixel Coordinate
     /// @param y Pixel Coordinate
     /// @return Light Ray that influences the pixel, direction is normalized
-    LightRay GenerateRayFromPixel(int x, int y)
+    LightRay
+    GenerateRayFromPixel(int x, int y)
     {
         // Direction of the camera
         Vec3 forward = (lookAt - position).normalized();

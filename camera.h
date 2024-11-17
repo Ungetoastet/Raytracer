@@ -221,7 +221,7 @@ public:
         const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1;
 
         // Compute color for each pixel
-#pragma omp parallel firstprivate(activeScene)
+#pragma omp parallel firstprivate(scene_spheres, scene_planes, scene_cubes)
         {
             for (int rowbundle : thread_row_table[omp_get_thread_num()])
             {

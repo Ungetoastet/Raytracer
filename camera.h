@@ -15,22 +15,81 @@ private:
     /// @brief Seed for randomness
     unsigned int rng_seed = 42;
 
-    /// @brief Generates the full recursion for a single ray
-    /// @param scene active scene
-    /// @param bounces How many times the ray can bounce before it is interrupted
-    /// @param scatter Into how many rays does the ray scatter on impact?
-    /// @return
-    Vec3 FullTrace(LightRay lr, int bounces, int scatter)
+    // Downcast objects before rendering
+    vector<Sphere *> scene_spheres;
+    vector<Plane *> scene_planes;
+    vector<Cube *> scene_cubes;
+
+    /// @brief Takes the scene.objects array and downcasts it into the scene_xxx arrays
+    void GenerateObjectDowncasts()
     {
-        // Check Object Collisions
+        for (Object *o : activeScene.objects)
+        {
+            Sphere *s = dynamic_cast<Sphere *>(o);
+            if (s)
+            {
+                scene_spheres.push_back(s);
+                continue;
+            }
+            Plane *p = dynamic_cast<Plane *>(o);
+            if (p)
+            {
+                scene_planes.push_back(p);
+                continue;
+            }
+            Cube *c = dynamic_cast<Cube *>(o);
+            if (c)
+            {
+                scene_cubes.push_back(c);
+                continue;
+            }
+            std::cerr << "OBJECT BAKING ERROR: CORRUPTED OBJECT POINTER" << std::endl;
+        }
+    }
+
+    /// @brief Checks all baked objects for collisions
+    /// @param lr Light ray to check
+    /// @return closest collision and closest object
+    std::pair<Collision, Object *> checkClosestCollision(LightRay &lr)
+    {
         Object *closestObject;
-        Collision closestCollision;
+        Collision closestCollision = NO_COLLISION;
         float closestDistance = 9999;
         bool hitObj = false;
 
-        for (Object *o : activeScene.objects)
+        for (Sphere *o : scene_spheres)
         {
-            Collision c = checkWithSafeDowncast(o, lr);
+            Collision c = o->CheckCollision(lr);
+            if (c.valid && c.distance < closestDistance)
+            {
+                closestDistance = c.distance;
+                closestObject = o;
+                closestCollision = c;
+                hitObj = true;
+            }
+            else
+            {
+                continue;
+            }
+        }
+        for (Cube *o : scene_cubes)
+        {
+            Collision c = o->CheckCollision(lr);
+            if (c.valid && c.distance < closestDistance)
+            {
+                closestDistance = c.distance;
+                closestObject = o;
+                closestCollision = c;
+                hitObj = true;
+            }
+            else
+            {
+                continue;
+            }
+        }
+        for (Plane *o : scene_planes)
+        {
+            Collision c = o->CheckCollision(lr);
             if (c.valid && c.distance < closestDistance)
             {
                 closestDistance = c.distance;
@@ -44,7 +103,21 @@ private:
             }
         }
 
-        if (hitObj)
+        return {closestCollision, closestObject};
+    }
+
+    /// @brief Generates the full recursion for a single ray
+    /// @param scene active scene
+    /// @param bounces How many times the ray can bounce before it is interrupted
+    /// @param scatter Into how many rays does the ray scatter on impact?
+    /// @return
+    Vec3 FullTrace(LightRay lr, int bounces, int scatter)
+    {
+        // Check Object Collisions
+
+        auto [closestCollision, closestObject] = checkClosestCollision(lr);
+
+        if (closestCollision.valid)
         {
             float diffuse = closestObject->mat.diffuse;
             float intensity = closestObject->mat.intensity;
@@ -99,8 +172,8 @@ public:
     void RenderImage(RenderKernel kernel)
     {
         std::cout << "Starting render..." << std::endl;
-        std::string ppm = generate_PPM_header(renderSettings);
-        const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1;
+
+        GenerateObjectDowncasts();
 
         vector<std::string> rows(renderSettings.resolution[1]);
         vector<float> load_rows(renderSettings.resolution[1] / 5);
@@ -145,6 +218,8 @@ public:
         std::cout << "Load balancing done in " << (omp_get_wtime() - starttime) << std::endl;
         starttime = omp_get_wtime();
 
+        const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1;
+
         // Compute color for each pixel
 #pragma omp parallel firstprivate(activeScene)
         {
@@ -168,6 +243,8 @@ public:
 
         std::cout << "Rendering done in " << (omp_get_wtime() - starttime) << std::endl;
         starttime = omp_get_wtime();
+
+        std::string ppm = generate_PPM_header(renderSettings);
 
         for (const string &row : rows)
         {
@@ -262,7 +339,7 @@ public:
         LightRay lr = GenerateRayFromPixel(x, y);
         for (Object *o : activeScene.objects)
         {
-            Collision c = checkWithSafeDowncast(o, lr);
+            Collision c = o->CheckCollision(lr);
             if (c.valid)
             {
                 return {1.0f, 0.0f, 0.0f};
@@ -277,7 +354,7 @@ public:
         LightRay lr = GenerateRayFromPixel(x, y);
         for (Object *o : activeScene.objects)
         {
-            Collision c = checkWithSafeDowncast(o, lr);
+            Collision c = o->CheckCollision(lr);
             if (c.valid)
             {
                 Vec3 col = c.normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
@@ -298,7 +375,7 @@ public:
             bool hit = false;
             for (Object *o : activeScene.objects)
             {
-                Collision c = checkWithSafeDowncast(o, lr);
+                Collision c = o->CheckCollision(lr);
 
                 if (c.valid)
                 {

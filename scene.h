@@ -93,15 +93,15 @@ private:
             XML_Node current_camera = parse_xml_bracket(camera);
             if (current_camera.tag_name == "position")
             {
-                CreatePosition(current_position.parameters);
+                CreatePosition(current_camera.parameters);
             }
             else if (current_camera.tag_name == "lookAt")
             {
-                CreateLookAt(current_lookAt.parameters);
+                CreateLookAt(current_camera.parameters);
             }
             else if (current_camera.tag_name == "fieldOfView")
             {
-                CreateFieldOfView(current_fieldOfView.parameters);
+                CreateFieldOfView(current_camera.parameters);
             }
             else
             {
@@ -117,7 +117,27 @@ private:
             XML_Node current_materials = parse_xml_bracket(material);
             if (current_materials.tag_name == "material")
             {
-                CreateMaterials(current_materials.parameters, current_materials.children);
+                ParseMaterial(current_materials.children);
+            }
+            else
+            {
+                std::cerr << "SCENE ERROR: UNKNOWN MATERIAL" << current_materials.tag_name << std::endl;
+            }
+        }
+    }
+
+    void ParseMaterial(std::vector<string> materialStrings)
+    {
+        for (std::string material : materialStrings)
+        {
+            XML_Node current_material = parse_xml_bracket(material);
+            if (current_material.tag_name == "diffuse")
+            {
+                CreateDiffuse(current_material.parameters);
+            }
+            else if (current_material.tag_name == "specular")
+            {
+                CreateSpecular(current_material.parameters);
             }
             else
             {
@@ -369,7 +389,7 @@ private:
         float fieldOfView(val);
     }
 
-    void CreateMaterials(std::map<std::string, std::string> materialsParams)
+    void CreateDiffuse(std::map<std::string, std::string> diffuseParams)
     {
         // Variablen erstellen
         string materialID;

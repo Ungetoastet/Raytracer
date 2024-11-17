@@ -59,7 +59,17 @@ struct alignas(16) Vec3
     }
     Vec3 normalized() const
     {
-        return self() * (1 / length());
+        // Fast inverse sqrt
+        float y = norm2();
+        float x2 = y * 0.5;
+        long i;
+        const float threehalves = 1.5;
+
+        i = *(long *)&y;                      // For bit manipulation
+        i = 0x5f3759df - (i >> 1);            // Magic
+        y = *(float *)&i;                     // Back to float for calculating
+        y = y * (threehalves - (x2 * y * y)); // Newton iteration
+        return self() * y;
     }
     float length() const
     {

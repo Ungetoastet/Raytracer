@@ -196,11 +196,11 @@ public:
         return;
     }
 
-    /// @param x Pixel Coordinate
-    /// @param y Pixel Coordinate
+    /// @param x Sub Pixel Coordinate
+    /// @param y Sub Pixel Coordinate
     /// @return Light Ray that influences the pixel, direction is normalized
     LightRay
-    GenerateRayFromPixel(int x, int y)
+    GenerateRayFromPixel(float x, float y)
     {
         // Direction of the camera
         Vec3 forward = (lookAt - position).normalized();
@@ -329,5 +329,20 @@ public:
     Vec3 kernel_scattertest(int x, int y)
     {
         return FullTrace(GenerateRayFromPixel(x, y), 5, 10);
+    }
+
+    Vec3 kernel_full(int x, int y)
+    {
+        Vec3 final_color;
+        for (int i = 0; i < renderSettings.supersampling_steps; i++)
+        {
+            for (int j = 0; j < renderSettings.supersampling_steps; j++)
+            {
+                float subpixel_x = (float)x + (static_cast<float>(i) / renderSettings.supersampling_steps);
+                float subpixel_y = (float)y + (static_cast<float>(j) / renderSettings.supersampling_steps);
+                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 5, 10);
+            }
+        }
+        return final_color * (1.0f / (renderSettings.supersampling_steps * renderSettings.supersampling_steps));
     }
 };

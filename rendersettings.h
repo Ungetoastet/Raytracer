@@ -82,10 +82,27 @@ private:
         }
     }
 
+    void SetSupersampling(std::map<std::string, std::string> xml_params)
+    {
+        for (const auto &[key, value] : xml_params)
+        {
+            if (key == "steps")
+            {
+                supersampling_steps = stoi(value);
+            }
+            else
+            {
+                std::cerr << "RENDERSETTINGS ERROR: UNKNOWN SUPERSAMPLING PARAMETER" << std::endl;
+            }
+        }
+    }
+
 public:
     /// @brief Width, Height
     std::vector<int> resolution;
     std::string output_path;
+    int supersampling_steps;
+
     /// @brief How many bits to use for one RGB channel
     int channel_depth;
     /// @brief Default render settings: FullHD, 8bit depth
@@ -94,6 +111,7 @@ public:
         resolution = {1920, 1080};
         output_path = "render.ppm";
         channel_depth = 8;
+        supersampling_steps = 1;
     }
 
     /// @brief Manually set render settings
@@ -136,6 +154,10 @@ public:
             else if (current_setting.tag_name == "outputpath")
             {
                 SetOutputpath(current_setting.parameters);
+            }
+            else if (current_setting.tag_name == "supersampling")
+            {
+                SetSupersampling(current_setting.parameters);
             }
             else
             {

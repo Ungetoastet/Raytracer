@@ -49,7 +49,12 @@ private:
             // Scatter
             if (bounces == 0)
             {
-                return {1, 0, 0};
+                return {0, 0, 0};
+            }
+            if (diffuse < 0)
+            {
+                // For emissive materials
+                return closestObject->mat.color;
             }
             Vec3 resColor = {0, 0, 0};
             for (int s = 0; s < scatter; s++)
@@ -102,6 +107,7 @@ public:
         vector<std::string> rows(renderSettings.resolution[1]);
         vector<float> load_rows(renderSettings.resolution[1] / 5);
 
+        std::cout << "Starting load test" << std::endl;
         double starttime = omp_get_wtime();
 
         // Compute load for each row
@@ -156,9 +162,9 @@ public:
                     for (int x = 0; x < renderSettings.resolution[0]; x++)
                     {
                         Vec3 color = kernel(x, y) * calculatedChannelDepth;
-                        int r = static_cast<int>(color.x);
-                        int g = static_cast<int>(color.y);
-                        int b = static_cast<int>(color.z);
+                        int r = std::min(255, std::max(0, static_cast<int>(color.x)));
+                        int g = std::min(255, std::max(0, static_cast<int>(color.y)));
+                        int b = std::min(255, std::max(0, static_cast<int>(color.z)));
                         row.append(std::to_string(r)).append(" ").append(std::to_string(g)).append(" ").append(std::to_string(b)).append(" ");
                     }
                     rows[y] = row;
@@ -244,16 +250,24 @@ public:
         return lr.direction;
     }
 
+    // std::vector<Vec3> skybox_colors = {
+    //     {0.0f, 0.02f, 0.08f},
+    //     {0.3f, 0.2f, 0.5f},
+    //     {0.8314f, 0.8118f, 0.7922f},
+    //     {0.9331f, 0.8118f, 0.3922f},
+    //     {0.8039f, 0.8667f, 0.9294f},
+    //     {0.2353f, 0.2471f, 0.3686f}};
+
+    // std::vector<float> skybox_marks = {
+    //     0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.1f};
+
     std::vector<Vec3> skybox_colors = {
-        {0.0f, 0.02f, 0.08f},
-        {0.3f, 0.2f, 0.5f},
-        {0.8314f, 0.8118f, 0.7922f},
-        {0.9331f, 0.8118f, 0.3922f},
-        {0.8039f, 0.8667f, 0.9294f},
-        {0.2353f, 0.2471f, 0.3686f}};
+        {0.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f},
+    };
 
     std::vector<float> skybox_marks = {
-        0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.1f};
+        0.0f, 1.1f};
 
     Vec3 kernel_skyboxOnly(int x, int y)
     {
@@ -340,7 +354,7 @@ public:
             {
                 float subpixel_x = (float)x + (static_cast<float>(i) / renderSettings.supersampling_steps);
                 float subpixel_y = (float)y + (static_cast<float>(j) / renderSettings.supersampling_steps);
-                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 5, 10);
+                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5);
             }
         }
         return final_color * (1.0f / (renderSettings.supersampling_steps * renderSettings.supersampling_steps));

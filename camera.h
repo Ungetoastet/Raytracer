@@ -19,8 +19,9 @@ private:
     /// @param scene active scene
     /// @param bounces How many times the ray can bounce before it is interrupted
     /// @param scatter Into how many rays does the ray scatter on impact?
+    /// @param scatterreduction How many scatter rays to lose after each bounce
     /// @return
-    Vec3 FullTrace(LightRay lr, int bounces, int scatter)
+    Vec3 FullTrace(LightRay lr, int bounces, int scatter, int scatterreduction)
     {
         // Check Object Collisions
         Object *closestObject;
@@ -61,11 +62,11 @@ private:
             {
                 Vec3 reflected = closestCollision.incoming_direction.mirrorToNormalized(closestCollision.normal) + Vec3{0, 0, 0}.scatter(diffuse, &rng_seed);
                 reflected = reflected.normalized();
-                Vec3 hit_color = (closestObject->mat.color * (1 - intensity)) + (FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatter) * intensity);
+                Vec3 hit_color = (closestObject->mat.color * (1 - intensity)) + (FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatter - scatterreduction, scatterreduction) * intensity);
                 resColor = resColor + hit_color;
             }
 
-            return resColor * (1.0f / scatter);
+            return (closestObject->mat.color * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0));
         }
         else
         {
@@ -342,7 +343,7 @@ public:
 
     Vec3 kernel_scattertest(int x, int y)
     {
-        return FullTrace(GenerateRayFromPixel(x, y), 5, 10);
+        return FullTrace(GenerateRayFromPixel(x, y), 5, 10, 0);
     }
 
     Vec3 kernel_full(int x, int y)
@@ -354,7 +355,7 @@ public:
             {
                 float subpixel_x = (float)x + (static_cast<float>(i) / renderSettings.supersampling_steps);
                 float subpixel_y = (float)y + (static_cast<float>(j) / renderSettings.supersampling_steps);
-                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5);
+                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 10, 2);
             }
         }
         return final_color * (1.0f / (renderSettings.supersampling_steps * renderSettings.supersampling_steps));

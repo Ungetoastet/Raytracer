@@ -16,8 +16,8 @@ int main()
     Scene testscene = Scene("./Documentation/test.scene");
 
     Material test_emissive = Material("testemi", Vec3(2.0, 2.0, 2.0), 0.3, -1);
-    Material test_blue = Material("testblue", Vec3(0.1, 0.1, 1), 0.8, 0.5);
-    Material test_red = Material("testred", Vec3(1, 0.1, 0.1), 0.8, 0.5);
+    Material test_blue = Material("testblue", Vec3(0.1, 0.1, 1), 0.6, 0.5);
+    Material test_red = Material("testred", Vec3(1, 0.1, 0.1), 0.6, 0.5);
     Material test_white = Material("testwhite", Vec3(1, 1, 1), 0.8, 0.5);
     Material test_mirror = Material("testmirror", Vec3(1, 1, 1), 0.9, 0.1);
     Material test_black = Material("testblack", Vec3(0.1, 0.1, 0.1), 0.4, 0.6);

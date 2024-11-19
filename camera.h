@@ -30,8 +30,8 @@ private:
 
         for (Object *o : activeScene.objects)
         {
-            Collision c = o->CheckCollision(lr);
-            if (c.valid && c.distance < closestDistance)
+            Collision c = o->CheckCollision(lr);         // Kollision prüfen
+            if (c.valid && c.distance < closestDistance) // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
                 closestDistance = c.distance;
                 closestObject = o;
@@ -43,32 +43,34 @@ private:
             }
         }
 
-        if (closestCollision.valid)
+        if (closestCollision.valid) // wenn Kollision gefunden
         {
+            // Objekteigenschaften auslesen
             float diffuse = closestObject->mat.diffuse;
             float intensity = closestObject->mat.intensity;
             // Scatter
-            if (bounces == 0)
+            if (bounces == 0) // wenn max Anzahl von Kollisionen erreicht
             {
-                return {0, 0, 0};
+                return {0, 0, 0}; // Rückgabe von schwarz
             }
             if (diffuse < 0)
             {
-                // For emissive materials
+                // For emissive materials, Rückgabe Emissionsfarbe
                 return closestObject->mat.color;
             }
+            // wenn Material diffus & nicht emissiv
             Vec3 resColor = {0, 0, 0};
             for (int s = 0; s < scatter; s++)
             {
-                Vec3 reflected = closestCollision.incoming_direction.mirrorToNormalized(closestCollision.normal) + Vec3{0, 0, 0}.scatter(diffuse, &rng_seed);
+                Vec3 reflected = closestCollision.incoming_direction.mirrorToNormalized(closestCollision.normal) + Vec3{0, 0, 0}.scatter(diffuse, &rng_seed); // normalisierte Spiegelung, hinzufügen zufällige Streuung
                 reflected = reflected.normalized();
-                Vec3 hit_color = (closestObject->mat.color * (1 - intensity)) + (FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatter - scatterreduction, scatterreduction) * intensity);
+                Vec3 hit_color = (closestObject->mat.color * (1 - intensity)) + (FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatter - scatterreduction, scatterreduction) * intensity); // Rekursion mit kleinerer bounces- und scatter-Anzahl
                 resColor = resColor + hit_color;
             }
 
-            return (closestObject->mat.color * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0));
+            return (closestObject->mat.color * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0)); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
         }
-        else
+        else // wenn keine Kollision gefunden, Farbe des Hintergrundes berechnen
         {
             float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
             return get_gradient(skybox_colors, skybox_marks, gradient_pos);
@@ -102,11 +104,11 @@ public:
     /// @brief Renders the complete image using the given settings
     void RenderImage(RenderKernel kernel)
     {
-        std::string ppm = generate_PPM_header(renderSettings);
-        const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1;
+        std::string ppm = generate_PPM_header(renderSettings);                      // Header der PPM-Datei erstellt --> Infos wie Bildauflösung, Channel-Depth
+        const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1; // Berechnung Channel-Depth
 
-        vector<std::string> rows(renderSettings.resolution[1]);
-        vector<float> load_rows(renderSettings.resolution[1] / 5);
+        vector<std::string> rows(renderSettings.resolution[1]);    // Speicher für Zeilen des Bildes
+        vector<float> load_rows(renderSettings.resolution[1] / 5); // Speicher für Berechnungslast jeder Zeile
 
         std::cout << "Starting load test" << std::endl;
         double starttime = omp_get_wtime();
@@ -123,10 +125,10 @@ public:
             load_rows[y] = omp_get_wtime() - row_start;
         }
 
-        auto [row_numbers, sorted_loads] = sortWithIndex(load_rows);
+        auto [row_numbers, sorted_loads] = sortWithIndex(load_rows); // Zeilen nach berechneter Last sortieren
 
         // Distribute load
-        vector<vector<int>> thread_row_table = vector<vector<int>>(omp_get_max_threads());
+        vector<vector<int>> thread_row_table = vector<vector<int>>(omp_get_max_threads()); // gibt an welche Zeilen von welchem Thread bearbeitet werden
         vector<float> thread_loads = vector<float>(omp_get_max_threads());
 
         // Give biggest load to least loaded thread
@@ -150,6 +152,8 @@ public:
         starttime = omp_get_wtime();
 
         // Compute color for each pixel
+        // Zeilen in thread_row_table werden parallelisiert
+        // jeder Thread rendert die ihm zugewiesenen Zeitbündel (je 5 Zeilen)
         int rows_done = 0;
 #pragma omp parallel
         {
@@ -170,6 +174,7 @@ public:
                     }
                     rows[y] = row;
                 }
+// hier wird Gesamtzahl der gerenderten Zeilen (rows_done) aktualisiert und ein Fortschrittsbalken in Konsole angezeigt
 #pragma omp critical
                 {
                     rows_done += 5;
@@ -183,7 +188,7 @@ public:
 
         for (const string &row : rows)
         {
-            ppm += row + "\n";
+            ppm += row + "\n"; // alle Zeilen in rows in PPM-String zusammengefügt
         }
 
         std::ofstream file(renderSettings.output_path);
@@ -346,18 +351,24 @@ public:
         return FullTrace(GenerateRayFromPixel(x, y), 5, 10, 0);
     }
 
+    // berechnet Farbe eines Pixels mit Supersampling
+    // Supersampling: verbessert Bildqualität indem mehrere Strahlen pro Pixel simuliert und deren Ergebnisse dann gemittelt werden --> reduziert Treppeneffekte bei scharfen Kanten (Aliasing)
     Vec3 kernel_full(int x, int y)
     {
         Vec3 final_color;
+        // innerhalb jedes Pixels mehrere Unterpixel simulieren
         for (int i = 0; i < renderSettings.supersampling_steps; i++)
         {
             for (int j = 0; j < renderSettings.supersampling_steps; j++)
             {
+                // jedes Subpixel durch kleine Verschiebungen berechnet --> gleichmäßig verteilte Subpixel-Koordinaten
                 float subpixel_x = (float)x + (static_cast<float>(i) / renderSettings.supersampling_steps);
                 float subpixel_y = (float)y + (static_cast<float>(j) / renderSettings.supersampling_steps);
-                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 10, 2);
+                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 10, 2); // Strahl für jeden Subpixel erzeugt
             }
         }
+        // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet
+        // berechnet Durchschnitt der Subpixelfarben um endgültige Pixelfarbe zu bestimmen
         return final_color * (1.0f / (renderSettings.supersampling_steps * renderSettings.supersampling_steps));
     }
 };

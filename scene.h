@@ -126,6 +126,14 @@ private:
         }
     }
 
+    void CreateObjectMaterial(std::vector<string> materialString)
+    {
+        for (std::string material : materialString)
+        {
+            XML_Node current_material = parse_xml_bracket(material);
+        }
+    }
+
     void CreateSphere(std::map<std::string, std::string> sphereParams)
     {
         // Variablen erstellen

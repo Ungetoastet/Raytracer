@@ -7,6 +7,8 @@
 #include <random>
 #include <algorithm>
 
+#include <immintrin.h>
+
 #include <cmath>
 
 /// @brief Gives a random float in range 0 to 1
@@ -32,9 +34,33 @@ struct alignas(16) Vec3
     Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 
     Vec3 self() const { return {x, y, z}; }
-    Vec3 operator+(const Vec3 &other) const { return {x + other.x, y + other.y, z + other.z}; }
-    Vec3 operator-(const Vec3 &other) const { return {x - other.x, y - other.y, z - other.z}; }
-    Vec3 operator*(const float scale) const { return {x * scale, y * scale, z * scale}; };
+    Vec3 operator+(const Vec3 &other) const
+    {
+        __m128 a = _mm_load_ps(&x);       // Load into SIMD
+        __m128 b = _mm_load_ps(&other.x); // Load into SIMD
+        __m128 result = _mm_add_ps(a, b); // Perform SIMD addition
+        Vec3 res;
+        _mm_store_ps(&res.x, result);
+        return res;
+    }
+    Vec3 operator-(const Vec3 &other) const
+    {
+        __m128 a = _mm_load_ps(&x);        // Load into SIMD
+        __m128 b = _mm_load_ps(&other.x);  // Load into SIMD
+        __m128 resData = _mm_sub_ps(a, b); // Perform SIMD addition
+        Vec3 res;
+        _mm_store_ps(&res.x, resData);
+        return res;
+    }
+    Vec3 operator*(const float scale) const
+    {
+        __m128 v = _mm_load_ps(&x);
+        __m128 mult = _mm_set1_ps(scale);
+        __m128 resData = _mm_mul_ps(v, mult);
+        Vec3 res;
+        _mm_store_ps(&res.x, resData);
+        return res;
+    }
     bool operator==(const Vec3 &other) const
     {
         return std::fabs(x - other.x) < 0.0001f &&
@@ -135,12 +161,33 @@ struct alignas(16) Vec3
     }
     /// @brief Randomly shift the vector by a tiny amount
     /// @param strength How far the changed vector is from the original
+
     Vec3 scatter(float strength, unsigned int *seed) const
     {
+        // Load the current Vec3 values into an AVX register
+        __m128 vec = _mm_set_ps(0.0f, z, y, x);
+
+        // Generate random numbers for x, y, z (padding ignored here)
+        float randValues[4];
+        randValues[0] = random2(seed); // x
+        randValues[1] = random2(seed); // y
+        randValues[2] = random2(seed); // z
+        randValues[3] = 0.0f;          // For alignment
+
+        // Load random values into an AVX register
+        __m128 randVec = _mm_loadu_ps(randValues);
+
+        // Scale the random values by strength
+        __m128 strengthVec = _mm_set1_ps(strength);
+        __m128 scaledRandVec = _mm_mul_ps(randVec, strengthVec);
+
+        // Add the scaled random values to the original Vec3
+        __m128 scatteredVec = _mm_add_ps(vec, scaledRandVec);
+
+        // Store the result into a Vec3
         Vec3 scattered;
-        scattered.x = x + (random2(seed) * strength);
-        scattered.y = y + (random2(seed) * strength);
-        scattered.z = z + (random2(seed) * strength);
+        _mm_storeu_ps(&scattered.x, scatteredVec);
+
         return scattered;
     }
 };

@@ -69,6 +69,9 @@ private:
             }
 
             return (closestObject->mat.color * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0)); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
+            Vec3 blended = (closestObject->mat.color * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0)); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
+
+            return blended;
         }
         else // wenn keine Kollision gefunden, Farbe des Hintergrundes berechnen
         {
@@ -356,15 +359,18 @@ public:
     Vec3 kernel_full(int x, int y)
     {
         Vec3 final_color;
+        float step_width = 1.0f / renderSettings.supersampling_steps;
+        float fx = static_cast<float>(x);
+        float fy = static_cast<float>(y);
         // innerhalb jedes Pixels mehrere Unterpixel simulieren
-        for (int i = 0; i < renderSettings.supersampling_steps; i++)
+        for (float i = 0; i <= 1 - step_width + 0.001f; i += step_width)
         {
-            for (int j = 0; j < renderSettings.supersampling_steps; j++)
+            for (float j = 0; j <= 1 - step_width + 0.001f; j += step_width)
             {
                 // jedes Subpixel durch kleine Verschiebungen berechnet --> gleichmäßig verteilte Subpixel-Koordinaten
-                float subpixel_x = (float)x + (static_cast<float>(i) / renderSettings.supersampling_steps);
-                float subpixel_y = (float)y + (static_cast<float>(j) / renderSettings.supersampling_steps);
-                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 10, 2); // Strahl für jeden Subpixel erzeugt
+                float subpixel_x = fx + i;
+                float subpixel_y = fy + j;
+                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2); // Strahl für jeden Subpixel erzeugt
             }
         }
         // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet

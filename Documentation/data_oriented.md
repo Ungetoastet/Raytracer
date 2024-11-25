@@ -3,7 +3,10 @@
 OOP casting in the render loop is very expensive.
 
 Render time:
-20s, 23s, 23s
+
+| Run 1 | Run 2 | Run 3 |
+| ----- | ----- | ----- |
+| 20s   | 23s   | 23s   |
 
 # Idea: Data Oriented Render Cycle
 
@@ -16,15 +19,21 @@ Size needed in Memory for each Object:
 | Information             | Memory Size in Bytes         | Memory Address |
 | ----------------------- | ---------------------------- | -------------- |
 | Object Type ID          | 1 (char)                     | 0              |
-| Object Position         | 3 (Vector) \* 4 (float)      | 1              |
-| Object Scale            | 3 (Vector) \* 4 (float)      | 13             |
-| Other Object Attributes | 3 \* 3 (Vector) \* 4 (float) | 25, 37, 49     |
-| Material: Color         | 3 (Vector) \* 4 (float)      | 61             |
-| Material: intensity     | 4 (float)                    | 73             |
-| Material: diffuse       | 4 (float)                    | 77             |
-| **SUM**                 | **81**                       |                |
+| Object Position         | 4 (Vector) \* 4 (float)      | 4              |
+| Object Scale            | 4 (Vector) \* 4 (float)      | 20             |
+| Other Object Attributes | 3 \* 4 (Vector) \* 4 (float) | 36, 52, 68     |
+| Material: Color         | 4 (Vector) \* 4 (float)      | 84             |
+| Material: intensity     | 4 (float)                    | 100            |
+| Material: diffuse       | 4 (float)                    | 104            |
+| **SUM**                 | **108**                      |                |
 
 Object Type IDs:
 
 0. Sphere
 1. Plane
+
+# Performance with Data Oriented Render Cycle
+
+| Run 1 | Run 2 | Run 3 |
+| ----- | ----- | ----- |
+| 11.4s | 11.1s | 10.5s |

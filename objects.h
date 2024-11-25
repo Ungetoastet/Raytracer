@@ -110,10 +110,10 @@ public:
 Collision MemoryCollision(LightRay &ray, char *objectMemStart)
 {
     Vec3 position;
-    std::memcpy(&position, objectMemStart + 1, 12);
+    std::memcpy(&position, objectMemStart + 4, 16);
 
     Vec3 scale;
-    std::memcpy(&scale, objectMemStart + 13, 12);
+    std::memcpy(&scale, objectMemStart + 20, 16);
 
     if (*(char *)objectMemStart == 0) // Sphere Collision
     {
@@ -144,11 +144,11 @@ Collision MemoryCollision(LightRay &ray, char *objectMemStart)
     else // Plane Collision
     {
         Vec3 normal;
-        std::memcpy(&normal, objectMemStart + 25, 12);
+        std::memcpy(&normal, objectMemStart + 36, 16);
         Vec3 localX;
-        std::memcpy(&localX, objectMemStart + 37, 12);
+        std::memcpy(&localX, objectMemStart + 52, 16);
         Vec3 localY;
-        std::memcpy(&localY, objectMemStart + 49, 12);
+        std::memcpy(&localY, objectMemStart + 68, 16);
 
         float divider = ray.direction.dot(normal);
         if (abs(divider) <= 0.01)

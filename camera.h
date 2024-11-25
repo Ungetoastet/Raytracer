@@ -31,7 +31,7 @@ private:
 
         for (int i = 0; i < activeScene.objects.size(); i++)
         {
-            char *objOffset = sceneMem + (81 * i);
+            char *objOffset = sceneMem + (108 * i);
             Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
             if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
@@ -48,12 +48,12 @@ private:
         if (closestCollision.valid) // wenn Kollision gefunden
         {
             // Objekteigenschaften auslesen
-            float intensity = *(float *)(closest_obj_ptr + 73);
-            float diffuse = *(float *)(closest_obj_ptr + 77);
+            float intensity = *(float *)(closest_obj_ptr + 100);
+            float diffuse = *(float *)(closest_obj_ptr + 104);
 
             // Scatter and bounce
             Vec3 objCol;
-            std::memcpy(&objCol, closest_obj_ptr + 61, 12);
+            std::memcpy(&objCol, closest_obj_ptr + 84, 16);
 
             if (diffuse < 0 || bounces == 0)
             {
@@ -70,7 +70,6 @@ private:
                 resColor = resColor + hit_color;
             }
 
-            return (objCol * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0));         // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
             Vec3 blended = (objCol * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0)); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
 
             return blended;
@@ -115,6 +114,7 @@ public:
 
         // Prepare Memory
         double starttime = omp_get_wtime();
+        std::cout << "Starting scene bake..." << std::endl;
         sceneMemory = bake_into_memory(activeScene.objects);
         std::cout << "Baking scene done in " << omp_get_wtime() - starttime << std::endl;
 
@@ -319,7 +319,7 @@ public:
 
         for (int i = 0; i < activeScene.objects.size(); i++)
         {
-            char *objOffset = sceneMemory + (81 * i);
+            char *objOffset = sceneMemory + (96 * i);
             Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
             if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
@@ -386,7 +386,7 @@ public:
     }
 
     // berechnet Farbe eines Pixels mit Supersampling
-    // Supersampling: verbessert Bildqualität indem mehrere Strahlen pro Pixel simuliert und deren Ergebnisse dann gemittelt werden --> reduziert Treppeneffekte bei scharfen Kanten (Aliasing)
+    // Supersampling: verbessert Bildqualität indem mehrere Strahlen pro Pixel simuliert und deren Ergebnisse dann gemittelt werden --> reduziert Bildrauschen und Treppeneffekte bei scharfen Kanten (Aliasing)
     Vec3 kernel_full(int x, int y)
     {
         Vec3 final_color;

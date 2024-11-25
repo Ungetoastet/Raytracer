@@ -20,21 +20,23 @@ private:
     /// @param bounces How many times the ray can bounce before it is interrupted
     /// @param scatter Into how many rays does the ray scatter on impact?
     /// @param scatterreduction How many scatter rays to lose after each bounce
+    /// @param sceneMem Pointer to the start of baked scene memory
     /// @return
-    Vec3 FullTrace(LightRay lr, int bounces, int scatter, int scatterreduction)
+    Vec3 FullTrace(LightRay lr, int bounces, int scatter, int scatterreduction, char *sceneMem)
     {
         // Check Object Collisions
-        Object *closestObject;
         Collision closestCollision = NO_COLLISION;
         float closestDistance = 9999;
+        char *closest_obj_ptr = 0;
 
-        for (Object *o : activeScene.objects)
+        for (int i = 0; i < activeScene.objects.size(); i++)
         {
-            Collision c = o->CheckCollision(lr);         // Kollision prüfen
-            if (c.valid && c.distance < closestDistance) // wenn Kollision gültig und Objekt näher ist als Vorherige
+            char *objOffset = sceneMem + (81 * i);
+            Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
+            if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
                 closestDistance = c.distance;
-                closestObject = o;
+                closest_obj_ptr = objOffset;
                 closestCollision = c;
             }
             else
@@ -46,17 +48,17 @@ private:
         if (closestCollision.valid) // wenn Kollision gefunden
         {
             // Objekteigenschaften auslesen
-            float diffuse = closestObject->mat.diffuse;
-            float intensity = closestObject->mat.intensity;
-            // Scatter
-            if (bounces == 0) // wenn max Anzahl von Kollisionen erreicht
-            {
-                return {0, 0, 0}; // Rückgabe von schwarz
-            }
-            if (diffuse < 0)
+            float intensity = *(float *)(closest_obj_ptr + 73);
+            float diffuse = *(float *)(closest_obj_ptr + 77);
+
+            // Scatter and bounce
+            Vec3 objCol;
+            std::memcpy(&objCol, closest_obj_ptr + 61, 12);
+
+            if (diffuse < 0 || bounces == 0)
             {
                 // For emissive materials, Rückgabe Emissionsfarbe
-                return closestObject->mat.color;
+                return objCol;
             }
             // wenn Material diffus & nicht emissiv
             Vec3 resColor = {0, 0, 0};
@@ -64,12 +66,12 @@ private:
             {
                 Vec3 reflected = closestCollision.incoming_direction.mirrorToNormalized(closestCollision.normal) + Vec3{0, 0, 0}.scatter(diffuse, &rng_seed); // normalisierte Spiegelung, hinzufügen zufällige Streuung
                 reflected = reflected.normalized();
-                Vec3 hit_color = (closestObject->mat.color * (1 - intensity)) + (FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatter - scatterreduction, scatterreduction) * intensity); // Rekursion mit kleinerer bounces- und scatter-Anzahl
+                Vec3 hit_color = (objCol * (1 - intensity)) + (FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatter - scatterreduction, scatterreduction, sceneMem) * intensity); // Rekursion mit kleinerer bounces- und scatter-Anzahl
                 resColor = resColor + hit_color;
             }
 
-            return (closestObject->mat.color * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0)); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
-            Vec3 blended = (closestObject->mat.color * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0)); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
+            return (objCol * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0));         // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
+            Vec3 blended = (objCol * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0)); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
 
             return blended;
         }
@@ -89,6 +91,7 @@ protected:
     Vec3 lookAt;
     float fieldOfView;
     Scene activeScene;
+    char *sceneMemory;
 
 public:
     /// @param position World position of the camera
@@ -110,11 +113,15 @@ public:
         std::string ppm = generate_PPM_header(renderSettings);                      // Header der PPM-Datei erstellt --> Infos wie Bildauflösung, Channel-Depth
         const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1; // Berechnung Channel-Depth
 
+        // Prepare Memory
+        double starttime = omp_get_wtime();
+        sceneMemory = bake_into_memory(activeScene.objects);
+        std::cout << "Baking scene done in " << omp_get_wtime() - starttime << std::endl;
+
         vector<std::string> rows(renderSettings.resolution[1]);    // Speicher für Zeilen des Bildes
         vector<float> load_rows(renderSettings.resolution[1] / 5); // Speicher für Berechnungslast jeder Zeile
 
-        std::cout << "Starting load test" << std::endl;
-        double starttime = omp_get_wtime();
+        starttime = omp_get_wtime();
 
         // Compute load for each row
 #pragma omp parallel for
@@ -259,24 +266,24 @@ public:
         return lr.direction;
     }
 
-    // std::vector<Vec3> skybox_colors = {
-    //     {0.0f, 0.02f, 0.08f},
-    //     {0.3f, 0.2f, 0.5f},
-    //     {0.8314f, 0.8118f, 0.7922f},
-    //     {0.9331f, 0.8118f, 0.3922f},
-    //     {0.8039f, 0.8667f, 0.9294f},
-    //     {0.2353f, 0.2471f, 0.3686f}};
-
-    // std::vector<float> skybox_marks = {
-    //     0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.1f};
-
     std::vector<Vec3> skybox_colors = {
-        {0.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f},
-    };
+        {0.0f, 0.02f, 0.08f},
+        {0.3f, 0.2f, 0.5f},
+        {0.8314f, 0.8118f, 0.7922f},
+        {0.9331f, 0.8118f, 0.3922f},
+        {0.8039f, 0.8667f, 0.9294f},
+        {0.2353f, 0.2471f, 0.3686f}};
 
     std::vector<float> skybox_marks = {
-        0.0f, 1.1f};
+        0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.1f};
+
+    // std::vector<Vec3> skybox_colors = {
+    //     {0.0f, 0.0f, 0.0f},
+    //     {0.0f, 0.0f, 0.0f},
+    // };
+
+    // std::vector<float> skybox_marks = {
+    //     0.0f, 1.1f};
 
     Vec3 kernel_skyboxOnly(int x, int y)
     {
@@ -301,18 +308,37 @@ public:
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
+
     Vec3 kernel_normals(int x, int y)
     {
         LightRay lr = GenerateRayFromPixel(x, y);
-        for (Object *o : activeScene.objects)
+
+        Collision closestCollision = NO_COLLISION;
+        float closestDistance = 9999;
+        char *closest_obj_ptr = 0;
+
+        for (int i = 0; i < activeScene.objects.size(); i++)
         {
-            Collision c = o->CheckCollision(lr);
-            if (c.valid)
+            char *objOffset = sceneMemory + (81 * i);
+            Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
+            if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
-                Vec3 col = c.normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
-                return col;
+                closestDistance = c.distance;
+                closest_obj_ptr = objOffset;
+                closestCollision = c;
+            }
+            else
+            {
+                continue;
             }
         }
+
+        if (closestCollision.valid)
+        {
+            Vec3 col = closestCollision.normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
+            return col;
+        }
+
         const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
@@ -349,9 +375,14 @@ public:
         return {1.0f, 0.0f, 0.0f};
     }
 
+    Vec3 kernel_flatColors(int x, int y)
+    {
+        return FullTrace(GenerateRayFromPixel(x, y), 0, 0, 0, sceneMemory);
+    }
+
     Vec3 kernel_scattertest(int x, int y)
     {
-        return FullTrace(GenerateRayFromPixel(x, y), 5, 10, 0);
+        return FullTrace(GenerateRayFromPixel(x, y), 5, 10, 4, sceneMemory);
     }
 
     // berechnet Farbe eines Pixels mit Supersampling
@@ -370,7 +401,7 @@ public:
                 // jedes Subpixel durch kleine Verschiebungen berechnet --> gleichmäßig verteilte Subpixel-Koordinaten
                 float subpixel_x = fx + i;
                 float subpixel_y = fy + j;
-                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2); // Strahl für jeden Subpixel erzeugt
+                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, sceneMemory); // Strahl für jeden Subpixel erzeugt
             }
         }
         // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet

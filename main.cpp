@@ -8,6 +8,7 @@
 #include "materials.h"
 #include "objects.h"
 #include "scene.h"
+#include "memprep.h"
 #include "camera.h"
 #include "light.h"
 

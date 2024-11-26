@@ -5,11 +5,12 @@
 #include <functional>
 
 using namespace std;
+using namespace m128Calc;
 
 class Camera
 {
     // Determines the color value for each pixel
-    using RenderKernel = std::function<Vec3(int x, int y)>;
+    using RenderKernel = std::function<__m128(int x, int y)>;
 
 private:
     /// @brief Seed for randomness
@@ -22,16 +23,16 @@ private:
     /// @param scatterreduction How many scatter rays to lose after each bounce
     /// @param sceneMem Pointer to the start of baked scene memory
     /// @return
-    Vec3 FullTrace(LightRay lr, int bounces, int scatter, int scatterreduction, char *sceneMem)
+    __m128 FullTrace(LightRay lr, int bounces, int scatters, int scatterreduction, float *sceneMem)
     {
         // Check Object Collisions
         Collision closestCollision = NO_COLLISION;
         float closestDistance = 9999;
-        char *closest_obj_ptr = 0;
+        float *closest_obj_ptr = 0;
 
         for (int i = 0; i < activeScene.objects.size(); i++)
         {
-            char *objOffset = sceneMem + (108 * i);
+            float *objOffset = sceneMem + (108 * i);
             Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
             if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
@@ -49,48 +50,49 @@ private:
         {
             // Objekteigenschaften auslesen
             float intensity = *(float *)(closest_obj_ptr + 100);
+            __m128 intv = _mm_set_ps1(intensity);
+            __m128 intvr = _mm_set_ps1(1 - intensity);
             float diffuse = *(float *)(closest_obj_ptr + 104);
 
             // Scatter and bounce
-            Vec3 objCol;
-            std::memcpy(&objCol, closest_obj_ptr + 84, 16);
+            __m128 objCol = _mm_loadr_ps(closest_obj_ptr + 84);
 
-            if (diffuse < 0 || bounces == 0)
+            if (diffuse < 0 || bounces == 0 || scatters <= 0)
             {
                 // For emissive materials, Rückgabe Emissionsfarbe
                 return objCol;
             }
             // wenn Material diffus & nicht emissiv
-            Vec3 resColor = {0, 0, 0};
-            for (int s = 0; s < scatter; s++)
+            __m128 resColor = _mm_setzero_ps();
+            for (int s = 0; s < scatters; s++)
             {
-                Vec3 reflected = closestCollision.incoming_direction.mirrorToNormalized(closestCollision.normal) + Vec3{0, 0, 0}.scatter(diffuse, &rng_seed); // normalisierte Spiegelung, hinzufügen zufällige Streuung
-                reflected = reflected.normalized();
-                Vec3 hit_color = (objCol * (1 - intensity)) + (FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatter - scatterreduction, scatterreduction, sceneMem) * intensity); // Rekursion mit kleinerer bounces- und scatter-Anzahl
-                resColor = resColor + hit_color;
+                __m128 reflected = normalized(scatter(mirrorToNormalized(closestCollision.incoming_direction, closestCollision.normal), diffuse, &rng_seed));                                                             // normalisierte Spiegelung, hinzufügen zufällige Streuung
+                __m128 hit_color = _mm_add_ps(_mm_mul_ps(objCol, intvr), _mm_mul_ps(FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatters - scatterreduction, scatterreduction, sceneMem), intv)); // Rekursion mit kleinerer bounces- und scatter-Anzahl
+                resColor = _mm_add_ps(resColor, hit_color);
             }
 
-            Vec3 blended = (objCol * (scatter <= 0)) + ((resColor * (1.0f / scatter)) * (scatter > 0)); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
+            __m128 scatter_inv = _mm_set_ps1(1.0f / scatters);
+            __m128 blended = _mm_mul_ps(resColor, scatter_inv); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
 
             return blended;
         }
         else // wenn keine Kollision gefunden, Farbe des Hintergrundes berechnen
         {
-            float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
+            float gradient_pos = (getY(lr.direction) * 0.5f) + 0.5f;
             return get_gradient(skybox_colors, skybox_marks, gradient_pos);
         }
     }
 
 protected:
-    Vec3 lookDirection;
+    __m128 lookDirection;
     int pixelCenterX;
     int pixelCenterY;
     RenderSettings renderSettings;
-    Vec3 position;
-    Vec3 lookAt;
+    __m128 position;
+    __m128 lookAt;
     float fieldOfView;
     Scene activeScene;
-    char *sceneMemory;
+    float *sceneMemory;
 
 public:
     /// @param position World position of the camera
@@ -98,19 +100,19 @@ public:
     /// @param fieldOfView Vertical FOV of the Camera in Degrees
     Camera(const Vec3 &position, const Vec3 &lookAt, float fieldOfView, const RenderSettings &rs, const Scene &activeScene)
     {
-        this->position = position;
-        this->lookAt = lookAt;
+        this->position = position.data;
+        this->lookAt = lookAt.data;
         this->fieldOfView = fieldOfView;
         this->activeScene = activeScene;
-        lookDirection = position - lookAt;
+        lookDirection = _mm_sub_ps(position.data, lookAt.data);
         renderSettings = rs;
     }
 
     /// @brief Renders the complete image using the given settings
     void RenderImage(RenderKernel kernel)
     {
-        std::string ppm = generate_PPM_header(renderSettings);                      // Header der PPM-Datei erstellt --> Infos wie Bildauflösung, Channel-Depth
-        const int calculatedChannelDepth = (1 << renderSettings.channel_depth) - 1; // Berechnung Channel-Depth
+        std::string ppm = generate_PPM_header(renderSettings);                                      // Header der PPM-Datei erstellt --> Infos wie Bildauflösung, Channel-Depth
+        const __m128 calculatedChannelDepth = _mm_set_ps1((1 << renderSettings.channel_depth) - 1); // Berechnung Channel-Depth
 
         // Prepare Memory
         double starttime = omp_get_wtime();
@@ -176,9 +178,9 @@ public:
                     row.reserve(renderSettings.resolution[0] * 3 * 4);
                     for (int x = 0; x < renderSettings.resolution[0]; x++)
                     {
-                        Vec3 color = kernel(x, y) * calculatedChannelDepth;
+                        __m128 color = kernel(x, y) * calculatedChannelDepth;
                         float components[4];
-                        _mm_storeu_ps(components, color.data);
+                        _mm_storeu_ps(components, color);
                         int r = std::min(255, std::max(0, static_cast<int>(components[0])));
                         int g = std::min(255, std::max(0, static_cast<int>(components[1])));
                         int b = std::min(255, std::max(0, static_cast<int>(components[2])));
@@ -230,11 +232,11 @@ public:
     GenerateRayFromPixel(float x, float y)
     {
         // Direction of the camera
-        Vec3 forward = (lookAt - position).normalized();
+        __m128 forward = normalized(_mm_sub_ps(lookAt, position));
 
         // Right and up vectors for the camera coordinate system
-        Vec3 right = forward.cross({0, 1, 0}).normalized();
-        Vec3 up = right.cross(forward).normalized();
+        __m128 right = normalized(cross(forward, Vec3(0, 1, 0).data));
+        __m128 up = normalized(cross(right, forward));
 
         // Field of view in radians
         float aspectRatio = static_cast<float>(renderSettings.resolution[0]) / renderSettings.resolution[1];
@@ -247,11 +249,13 @@ public:
 
         // Screen space coordinates
         float pixelScreen_X = (2.0f * pixelNDC_X - 1.0f) * fovX;
+        __m128 psx = _mm_set_ps1(pixelScreen_X);
         float pixelScreen_Y = (1.0f - 2.0f * pixelNDC_Y) * fovY;
+        __m128 psy = _mm_set_ps1(pixelScreen_Y);
 
         // Calculate the direction of the ray based on the camera's position and orientation
-        Vec3 pixelWorld = forward + right * pixelScreen_X + up * pixelScreen_Y;
-        Vec3 direction = pixelWorld.normalized();
+        __m128 pixelWorld = _mm_add_ps(_mm_add_ps(forward, _mm_mul_ps(right, psx)), _mm_mul_ps(up, psy));
+        __m128 direction = normalized(pixelWorld);
 
         // Return the generated ray
         return LightRay{position, direction};
@@ -271,13 +275,13 @@ public:
         return lr.direction;
     }
 
-    std::vector<Vec3> skybox_colors = {
-        {0.0f, 0.02f, 0.08f},
-        {0.3f, 0.2f, 0.5f},
-        {0.8314f, 0.8118f, 0.7922f},
-        {0.9331f, 0.8118f, 0.3922f},
-        {0.8039f, 0.8667f, 0.9294f},
-        {0.2353f, 0.2471f, 0.3686f}};
+    std::vector<__m128> skybox_colors = {
+        Vec3{0.0f, 0.02f, 0.08f}.data,
+        Vec3{0.3f, 0.2f, 0.5f}.data,
+        Vec3{0.8314f, 0.8118f, 0.7922f}.data,
+        Vec3{0.9331f, 0.8118f, 0.3922f}.data,
+        Vec3{0.8039f, 0.8667f, 0.9294f}.data,
+        Vec3{0.2353f, 0.2471f, 0.3686f}.data};
 
     std::vector<float> skybox_marks = {
         0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.1f};
@@ -290,15 +294,15 @@ public:
     // std::vector<float> skybox_marks = {
     //     0.0f, 1.1f};
 
-    Vec3 kernel_skyboxOnly(int x, int y)
+    __m128 kernel_skyboxOnly(int x, int y)
     {
         LightRay lr = GenerateRayFromPixel(x, y);
-        const float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
+        const float gradient_pos = (getY(lr.direction) * 0.5f) + 0.5f;
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
 
-    Vec3 kernel_flatObjects(int x, int y)
+    __m128 kernel_flatObjects(int x, int y)
     {
         LightRay lr = GenerateRayFromPixel(x, y);
         for (Object *o : activeScene.objects)
@@ -306,25 +310,25 @@ public:
             Collision c = o->CheckCollision(lr);
             if (c.valid)
             {
-                return {1.0f, 0.0f, 0.0f};
+                return _mm_setzero_ps();
             }
         }
-        const float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
+        const float gradient_pos = (getY(lr.direction) * 0.5f) + 0.5f;
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
 
-    Vec3 kernel_normals(int x, int y)
+    __m128 kernel_normals(int x, int y)
     {
         LightRay lr = GenerateRayFromPixel(x, y);
 
         Collision closestCollision = NO_COLLISION;
         float closestDistance = 9999;
-        char *closest_obj_ptr = 0;
+        float *closest_obj_ptr = 0;
 
         for (int i = 0; i < activeScene.objects.size(); i++)
         {
-            char *objOffset = sceneMemory + (96 * i);
+            float *objOffset = sceneMemory + (96 * i);
             Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
             if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
@@ -340,17 +344,18 @@ public:
 
         if (closestCollision.valid)
         {
-            Vec3 col = closestCollision.normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
+            __m128 half = _mm_set1_ps(0.5);
+            __m128 col = _mm_add_ps(_mm_mul_ps(closestCollision.normal, half), half);
             return col;
         }
 
-        const float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
+        const float gradient_pos = (getY(lr.direction) * 0.5f) + 0.5f;
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
 
     /// @brief No scattering, no absorbsion, ten bounces
-    Vec3 kernel_supershiny(int x, int y)
+    __m128 kernel_supershiny(int x, int y)
     {
         LightRay lr = GenerateRayFromPixel(x, y);
         for (int bounce = 0; bounce <= 10; bounce++)
@@ -361,7 +366,7 @@ public:
                 Collision c = o->CheckCollision(lr);
                 if (c.valid)
                 {
-                    Vec3 reflected = c.incoming_direction.mirrorToNormalized(c.normal);
+                    __m128 reflected = mirrorToNormalized(c.incoming_direction, c.normal);
                     lr = LightRay(c.point, reflected);
                     hit = true;
                     break;
@@ -372,29 +377,29 @@ public:
                 continue;
             }
 
-            const float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
+            const float gradient_pos = (getY(lr.direction) * 0.5f) + 0.5f;
             return get_gradient(skybox_colors, skybox_marks, gradient_pos);
         }
 
         // Max Bounces
-        return {1.0f, 0.0f, 0.0f};
+        return _mm_setzero_ps();
     }
 
-    Vec3 kernel_flatColors(int x, int y)
+    __m128 kernel_flatColors(int x, int y)
     {
         return FullTrace(GenerateRayFromPixel(x, y), 0, 0, 0, sceneMemory);
     }
 
-    Vec3 kernel_scattertest(int x, int y)
+    __m128 kernel_scattertest(int x, int y)
     {
         return FullTrace(GenerateRayFromPixel(x, y), 5, 10, 4, sceneMemory);
     }
 
     // berechnet Farbe eines Pixels mit Supersampling
     // Supersampling: verbessert Bildqualität indem mehrere Strahlen pro Pixel simuliert und deren Ergebnisse dann gemittelt werden --> reduziert Bildrauschen und Treppeneffekte bei scharfen Kanten (Aliasing)
-    Vec3 kernel_full(int x, int y)
+    __m128 kernel_full(int x, int y)
     {
-        Vec3 final_color;
+        __m128 final_color;
         float step_width = 1.0f / renderSettings.supersampling_steps;
         float fx = static_cast<float>(x);
         float fy = static_cast<float>(y);
@@ -406,11 +411,12 @@ public:
                 // jedes Subpixel durch kleine Verschiebungen berechnet --> gleichmäßig verteilte Subpixel-Koordinaten
                 float subpixel_x = fx + i;
                 float subpixel_y = fy + j;
-                final_color = final_color + FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, sceneMemory); // Strahl für jeden Subpixel erzeugt
+                final_color = _mm_add_ps(final_color, FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, sceneMemory)); // Strahl für jeden Subpixel erzeugt
             }
         }
         // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet
         // berechnet Durchschnitt der Subpixelfarben um endgültige Pixelfarbe zu bestimmen
-        return final_color * (1.0f / (renderSettings.supersampling_steps * renderSettings.supersampling_steps));
+        __m128 div = _mm_set1_ps(renderSettings.supersampling_steps * renderSettings.supersampling_steps);
+        return _mm_div_ps(final_color, div);
     }
 };

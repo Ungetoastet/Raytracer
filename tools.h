@@ -20,11 +20,12 @@ float random1(unsigned int *seed)
 }
 
 /// @brief Gives a random float in range -1 to 1
-float random2(unsigned int *seed)
+inline float random2(unsigned int *seed)
 {
     return random1(seed) * 2 - 1.0;
 }
 
+// Do not use in render kernel
 struct alignas(16) Vec3
 {
     // 4. Component is padding
@@ -110,12 +111,6 @@ struct alignas(16) Vec3
     {
         return std::to_string(x()) + ", " + std::to_string(y()) + ", " + std::to_string(z());
     }
-    Vec3 mirrorToNormalized(Vec3 &normalizedmirror) const
-    {
-        __m128 dotv = _mm_set1_ps((*this).dot(normalizedmirror) * 2);
-        __m128 scaledMirror = _mm_mul_ps(dotv, normalizedmirror.data);
-        return _mm_sub_ps(data, scaledMirror);
-    }
     /// @brief Rotate a vector around three axis
     /// @attention VERY SLOW! Do not use in render loop
     /// @param radRotation x, y, z Angles in radians
@@ -157,14 +152,6 @@ struct alignas(16) Vec3
     {
         __m128 mult = _mm_set1_ps(M_PI / 180.0f);
         return _mm_mul_ps(mult, data);
-    }
-    /// @brief Randomly shift the vector by a tiny amount
-    /// @param strength How far the changed vector is from the original
-    Vec3 scatter(float strength, unsigned int *seed) const
-    {
-        __m128 scatter = _mm_setr_ps(random2(seed), random2(seed), random2(seed), 0);
-        __m128 strengthv = _mm_set1_ps(strength);
-        return _mm_add_ps(data, _mm_mul_ps(scatter, strengthv));
     }
 };
 
@@ -372,27 +359,28 @@ XML_Node parse_xml_bracket(const std::string xml)
 /// @param points The colors inside the gradient
 /// @param marks The positions where the colors are in the gradient, must be sorted. First must be 0, last must be 1.
 /// @return Color inside gradient
-Vec3 get_gradient(std::vector<Vec3> &points, std::vector<float> &marks, float position)
+__m128 get_gradient(std::vector<__m128> &points, std::vector<float> &marks, float position)
 {
     for (size_t i = 1; i < marks.size(); i++)
     {
         if (marks[i] >= position)
         {
             float relative_diff = (position - marks[i - 1]) / (marks[i] - marks[i - 1]);
-            Vec3 diff = points[i] - points[i - 1];
-            return points[i - 1] + (diff * relative_diff);
+            __m128 relative_diff_v = _mm_set_ps1(relative_diff);
+            __m128 diff = _mm_sub_ps(points[i], points[i - 1]);
+            return _mm_add_ps(points[i - 1], _mm_mul_ps(diff, relative_diff_v));
         }
     }
     std::cerr << "TOOL ERROR: INVALID GRADIENT POSITION: " << position << std::endl;
-    return {0, 0, 0};
+    return _mm_setzero_ps();
 }
 
 struct Collision
 {
     bool valid;
-    Vec3 point;
-    Vec3 normal;
-    Vec3 incoming_direction;
+    __m128 point;
+    __m128 normal;
+    __m128 incoming_direction;
     float distance;
 };
 

@@ -3,11 +3,11 @@
 class alignas(32) LightRay
 {
 public:
-    Vec3 origin;
+    __m128 origin;
 
-    Vec3 direction;
+    __m128 direction;
 
-    LightRay(Vec3 origin, Vec3 direction)
+    LightRay(__m128 origin, __m128 direction)
     {
         this->origin = origin;
         this->direction = direction;

@@ -2,6 +2,7 @@
 #include <string>
 
 #include "tools.h"
+#include "m128Utils.h"
 #include "lightray.h"
 #include "rendersettings.h"
 #include "rendertools.h"

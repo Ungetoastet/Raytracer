@@ -76,7 +76,7 @@ private:
         }
         else // wenn keine Kollision gefunden, Farbe des Hintergrundes berechnen
         {
-            float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+            float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
             return get_gradient(skybox_colors, skybox_marks, gradient_pos);
         }
     }
@@ -177,9 +177,11 @@ public:
                     for (int x = 0; x < renderSettings.resolution[0]; x++)
                     {
                         Vec3 color = kernel(x, y) * calculatedChannelDepth;
-                        int r = std::min(255, std::max(0, static_cast<int>(color.x)));
-                        int g = std::min(255, std::max(0, static_cast<int>(color.y)));
-                        int b = std::min(255, std::max(0, static_cast<int>(color.z)));
+                        float components[4];
+                        _mm_storeu_ps(components, color.data);
+                        int r = std::min(255, std::max(0, static_cast<int>(components[0])));
+                        int g = std::min(255, std::max(0, static_cast<int>(components[1])));
+                        int b = std::min(255, std::max(0, static_cast<int>(components[2])));
                         row.append(std::to_string(r)).append(" ").append(std::to_string(g)).append(" ").append(std::to_string(b)).append(" ");
                     }
                     rows[y] = row;
@@ -291,7 +293,7 @@ public:
     Vec3 kernel_skyboxOnly(int x, int y)
     {
         LightRay lr = GenerateRayFromPixel(x, y);
-        const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+        const float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
@@ -307,7 +309,7 @@ public:
                 return {1.0f, 0.0f, 0.0f};
             }
         }
-        const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+        const float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
@@ -342,7 +344,7 @@ public:
             return col;
         }
 
-        const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+        const float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
 
         return get_gradient(skybox_colors, skybox_marks, gradient_pos);
     }
@@ -370,7 +372,7 @@ public:
                 continue;
             }
 
-            const float gradient_pos = (lr.direction.y * 0.5f) + 0.5f;
+            const float gradient_pos = (lr.direction.y() * 0.5f) + 0.5f;
             return get_gradient(skybox_colors, skybox_marks, gradient_pos);
         }
 

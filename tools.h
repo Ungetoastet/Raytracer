@@ -7,6 +7,9 @@
 #include <random>
 #include <algorithm>
 
+#include <xmmintrin.h> // Vector instrinsics
+#include <pmmintrin.h> // SSE3
+
 #include <cmath>
 
 /// @brief Gives a random float in range 0 to 1
@@ -24,38 +27,59 @@ float random2(unsigned int *seed)
 
 struct alignas(16) Vec3
 {
-    float x, y, z;
-    float padding = 0;
+    // 4. Component is padding
+    __m128 data;
+
+    float x() const { return _mm_cvtss_f32(data); }
+    float y() const { return _mm_cvtss_f32(_mm_shuffle_ps(data, data, _MM_SHUFFLE(0, 0, 0, 1))); }
+    float z() const { return _mm_cvtss_f32(_mm_shuffle_ps(data, data, _MM_SHUFFLE(0, 0, 0, 2))); }
 
     /// @brief Creates a zero vector
-    Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
-    Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
-
-    Vec3 self() const { return {x, y, z}; }
-    Vec3 operator+(const Vec3 &other) const { return {x + other.x, y + other.y, z + other.z}; }
-    Vec3 operator-(const Vec3 &other) const { return {x - other.x, y - other.y, z - other.z}; }
-    Vec3 operator*(const float scale) const { return {x * scale, y * scale, z * scale}; };
-    bool operator==(const Vec3 &other) const
+    Vec3()
     {
-        return std::fabs(x - other.x) < 0.0001f &&
-               std::fabs(y - other.y) < 0.0001f &&
-               std::fabs(z - other.z) < 0.0001f;
+        data = _mm_set1_ps(0);
     }
-    // Checks if two vectors are parellel
-    bool operator!=(const Vec3 &other)
+    Vec3(__m128 data)
     {
-        Vec3 cross_product = this->cross(other);
-        return std::fabs(cross_product.x) < 0.0001f &&
-               std::fabs(cross_product.y) < 0.0001f &&
-               std::fabs(cross_product.z) < 0.0001f;
+        (*this).data = data;
     }
-    float dot(const Vec3 &other) const { return x * other.x + y * other.y + z * other.z; }
+    Vec3(float x, float y, float z)
+    {
+        data = _mm_setr_ps(x, y, z, 0);
+    }
+    Vec3 operator+(const Vec3 &other) const
+    {
+        return _mm_add_ps(other.data, data);
+    }
+    Vec3 operator-(const Vec3 &other) const
+    {
+        return _mm_sub_ps(data, other.data);
+    }
+    Vec3 operator*(const float scale) const
+    {
+        __m128 scalar = _mm_set1_ps(scale);
+        return _mm_mul_ps(data, scalar);
+    };
+    float dot(const Vec3 &other) const
+    {
+        __m128 mult = _mm_mul_ps(data, other.data);
+        __m128 temp = _mm_hadd_ps(mult, mult);
+        temp = _mm_hadd_ps(temp, temp);
+        return _mm_cvtss_f32(temp);
+    }
     Vec3 cross(const Vec3 &other) const
     {
-        return {
-            y * other.z - z * other.y,
-            z * other.x - x * other.z,
-            x * other.y - y * other.x};
+        // Shuffle components for cross product calculation
+        __m128 a_yzx = _mm_shuffle_ps(data, data, _MM_SHUFFLE(3, 0, 2, 1));             // (a_y, a_z, a_x, 0)
+        __m128 a_zxy = _mm_shuffle_ps(data, data, _MM_SHUFFLE(3, 1, 0, 2));             // (a_z, a_x, a_y, 0)
+        __m128 b_yzx = _mm_shuffle_ps(other.data, other.data, _MM_SHUFFLE(3, 0, 2, 1)); // (b_y, b_z, b_x, 0)
+        __m128 b_zxy = _mm_shuffle_ps(other.data, other.data, _MM_SHUFFLE(3, 1, 0, 2)); // (b_z, b_x, b_y, 0)
+
+        // Cross product formula: c = (a_y * b_z - a_z * b_y, a_z * b_x - a_x * b_z, a_x * b_y - a_y * b_x)
+        __m128 c = _mm_sub_ps(_mm_mul_ps(a_yzx, b_zxy), _mm_mul_ps(a_zxy, b_yzx));
+
+        // Mask out the 4th component (padding)
+        return _mm_and_ps(c, _mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1)));
     }
     Vec3 normalized() const
     {
@@ -69,7 +93,7 @@ struct alignas(16) Vec3
         i = 0x5f3759df - (i >> 1);            // Magic
         y = *(float *)&i;                     // Back to float for calculating
         y = y * (threehalves - (x2 * y * y)); // Newton iteration
-        return self() * y;
+        return (*this) * y;
     }
     float length() const
     {
@@ -77,32 +101,34 @@ struct alignas(16) Vec3
     }
     float norm2() const
     {
-        return x * x + y * y + z * z;
+        __m128 mult = _mm_mul_ps(data, data);
+        __m128 sum = _mm_add_ps(mult, _mm_shuffle_ps(mult, mult, _MM_SHUFFLE(0, 3, 2, 1)));
+        sum = _mm_add_ps(sum, _mm_shuffle_ps(sum, sum, _MM_SHUFFLE(0, 0, 0, 2)));
+        return _mm_cvtss_f32(sum);
     }
     std::string toString() const
     {
-        return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
-    }
-    Vec3 mirrorTo(Vec3 &mirror) const
-    {
-        Vec3 normalizedmirror = mirror.normalized();
-        return self() - (normalizedmirror * self().dot(normalizedmirror)) * 2.0f;
+        return std::to_string(x()) + ", " + std::to_string(y()) + ", " + std::to_string(z());
     }
     Vec3 mirrorToNormalized(Vec3 &normalizedmirror) const
     {
-        return self() - (normalizedmirror * self().dot(normalizedmirror)) * 2.0f;
+        __m128 dotv = _mm_set1_ps((*this).dot(normalizedmirror) * 2);
+        __m128 scaledMirror = _mm_mul_ps(dotv, normalizedmirror.data);
+        return _mm_sub_ps(data, scaledMirror);
     }
     /// @brief Rotate a vector around three axis
+    /// @attention VERY SLOW! Do not use in render loop
     /// @param radRotation x, y, z Angles in radians
     /// @return Rotated Vector
     Vec3 rotate(Vec3 &radRotation) const
     {
-        float sina = sinf(radRotation.x);
-        float sinb = sinf(radRotation.y);
-        float sing = sinf(radRotation.z);
-        float cosa = cosf(radRotation.x);
-        float cosb = cosf(radRotation.y);
-        float cosg = cosf(radRotation.z);
+        // Not called in render loop, performance not important
+        float sina = sinf(radRotation.x());
+        float sinb = sinf(radRotation.y());
+        float sing = sinf(radRotation.z());
+        float cosa = cosf(radRotation.x());
+        float cosb = cosf(radRotation.y());
+        float cosg = cosf(radRotation.z());
 
         // https://en.wikipedia.org/wiki/Rotation_matrix#General_3D_rotations
         // Components of rotation matrix
@@ -117,31 +143,28 @@ struct alignas(16) Vec3
         float rot33 = cosa * cosb;
 
         // Calculate components of vector rot*v
-        Vec3 res;
-        res.x = rot11 * x + rot12 * y + rot13 * z;
-        res.y = rot21 * x + rot22 * y + rot23 * z;
-        res.z = rot31 * x + rot32 * y + rot33 * z;
-        return res;
+        float x = rot11 * (*this).x() + rot12 * (*this).y() + rot13 * (*this).z();
+        float y = rot21 * (*this).x() + rot22 * (*this).y() + rot23 * (*this).z();
+        float z = rot31 * (*this).x() + rot32 * (*this).y() + rot33 * (*this).z();
+        return _mm_setr_ps(x, y, z, 0);
     }
     Vec3 radToEuler() const
     {
-        float mult = 180.0f / M_PI;
-        return {x * mult, y * mult, z * mult};
+        __m128 mult = _mm_set1_ps(180.0f / M_PI);
+        return _mm_mul_ps(mult, data);
     }
     Vec3 eulerToRad() const
     {
-        float mult = M_PI / 180.0f;
-        return {x * mult, y * mult, z * mult};
+        __m128 mult = _mm_set1_ps(M_PI / 180.0f);
+        return _mm_mul_ps(mult, data);
     }
     /// @brief Randomly shift the vector by a tiny amount
     /// @param strength How far the changed vector is from the original
     Vec3 scatter(float strength, unsigned int *seed) const
     {
-        Vec3 scattered;
-        scattered.x = x + (random2(seed) * strength);
-        scattered.y = y + (random2(seed) * strength);
-        scattered.z = z + (random2(seed) * strength);
-        return scattered;
+        __m128 scatter = _mm_setr_ps(random2(seed), random2(seed), random2(seed), 0);
+        __m128 strengthv = _mm_set1_ps(strength);
+        return _mm_add_ps(data, _mm_mul_ps(scatter, strengthv));
     }
 };
 

@@ -36,7 +36,8 @@ public:
         Vec3 center_origin_diff = ray.origin - position;
 
         float b = ray.direction.dot(center_origin_diff);
-        float c = center_origin_diff.norm2() - scale.x * scale.x;
+        float scaleX = scale.x();
+        float c = center_origin_diff.norm2() - scaleX * scaleX;
         float delta = b * b - c;
 
         if (delta < 0)
@@ -92,13 +93,13 @@ public:
         Vec3 diff = point - position;
 
         float x_dist = diff.cross(localY).length();
-        if (abs(x_dist) > scale.x)
+        if (abs(x_dist) > scale.x())
         {
             return NO_COLLISION;
         }
 
         float y_dist = diff.cross(localX).length();
-        if (abs(y_dist) > scale.y)
+        if (abs(y_dist) > scale.y())
         {
             return NO_COLLISION;
         }
@@ -121,7 +122,8 @@ Collision MemoryCollision(LightRay &ray, char *objectMemStart)
         Vec3 center_origin_diff = ray.origin - position;
 
         float b = ray.direction.dot(center_origin_diff);
-        float c = center_origin_diff.norm2() - scale.x * scale.x;
+        float scaleX = scale.x();
+        float c = center_origin_diff.norm2() - scaleX * scaleX;
         float delta = b * b - c;
 
         if (delta < 0)
@@ -165,13 +167,13 @@ Collision MemoryCollision(LightRay &ray, char *objectMemStart)
         Vec3 diff = point - position;
 
         float x_dist = diff.cross(localY).length();
-        if (abs(x_dist) > scale.x)
+        if (abs(x_dist) > scale.x())
         {
             return NO_COLLISION;
         }
 
         float y_dist = diff.cross(localX).length();
-        if (abs(y_dist) > scale.y)
+        if (abs(y_dist) > scale.y())
         {
             return NO_COLLISION;
         }

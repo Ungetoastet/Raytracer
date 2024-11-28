@@ -9,5 +9,5 @@
     <!-- <resolution x="850" y="480" /> -->
     <outputpath path="render.ppm" />
     <depth b="8" />
-    <supersampling steps="3" />
+    <supersampling steps="1" />
 </rendersettings>

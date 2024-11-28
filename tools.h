@@ -359,7 +359,7 @@ XML_Node parse_xml_bracket(const std::string xml)
 /// @param points The colors inside the gradient
 /// @param marks The positions where the colors are in the gradient, must be sorted. First must be 0, last must be 1.
 /// @return Color inside gradient
-__m128 get_gradient(std::vector<__m128> &points, std::vector<float> &marks, float position)
+__m128 get_gradient(__m128 *points, std::vector<float> &marks, float position)
 {
     for (size_t i = 1; i < marks.size(); i++)
     {

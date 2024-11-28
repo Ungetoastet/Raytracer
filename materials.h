@@ -7,7 +7,7 @@ class Material
 {
 public:
     string id;
-    Vec3 color;
+    __m128 color;
     float intensity;
     float diffuse;
 
@@ -22,7 +22,7 @@ public:
     Material(string id, Vec3 color, float intensity, float diffuse)
     {
         this->id = id;
-        this->color = color;
+        this->color = color.data;
         this->intensity = intensity;
         this->diffuse = diffuse;
     }

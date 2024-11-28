@@ -10,7 +10,7 @@ using namespace m128Calc;
 class Camera
 {
     // Determines the color value for each pixel
-    using RenderKernel = std::function<__m128(int x, int y)>;
+    using RenderKernel = __m128 (*)(Camera *cam, int x, int y);
 
 private:
     /// @brief Seed for randomness
@@ -32,7 +32,7 @@ private:
 
         for (int i = 0; i < activeScene.objects.size(); i++)
         {
-            float *objOffset = sceneMem + (108 * i);
+            float *objOffset = sceneMem + (28 * i);
             Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
             if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
@@ -49,13 +49,13 @@ private:
         if (closestCollision.valid) // wenn Kollision gefunden
         {
             // Objekteigenschaften auslesen
-            float intensity = *(float *)(closest_obj_ptr + 100);
+            float intensity = *(float *)(closest_obj_ptr + 24);
             __m128 intv = _mm_set_ps1(intensity);
             __m128 intvr = _mm_set_ps1(1 - intensity);
-            float diffuse = *(float *)(closest_obj_ptr + 104);
+            float diffuse = *(float *)(closest_obj_ptr + 25);
 
             // Scatter and bounce
-            __m128 objCol = _mm_loadr_ps(closest_obj_ptr + 84);
+            __m128 objCol = _mm_load_ps(closest_obj_ptr + 20);
 
             if (diffuse < 0 || bounces == 0 || scatters <= 0)
             {
@@ -95,6 +95,15 @@ protected:
     float *sceneMemory;
 
 public:
+    static __m128 kernel_full_redirect(Camera *cam, int x, int y)
+    {
+        return cam->kernel_rayTest(x, y);
+    }
+
+    __m128 *skybox_colors;
+
+    std::vector<float> skybox_marks = {
+        0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.1f};
     /// @param position World position of the camera
     /// @param lookAt World position thats in the center of the rendered image
     /// @param fieldOfView Vertical FOV of the Camera in Degrees
@@ -106,6 +115,15 @@ public:
         this->activeScene = activeScene;
         lookDirection = _mm_sub_ps(position.data, lookAt.data);
         renderSettings = rs;
+
+        // Skybox
+        skybox_colors = (__m128 *)aligned_alloc(16, 6 * 16);
+        skybox_colors[0] = Vec3{0.0f, 0.02f, 0.08f}.data;
+        skybox_colors[0] = Vec3{0.3f, 0.2f, 0.5f}.data;
+        skybox_colors[0] = Vec3{0.8314f, 0.8118f, 0.7922f}.data;
+        skybox_colors[0] = Vec3{0.9331f, 0.8118f, 0.3922f}.data;
+        skybox_colors[0] = Vec3{0.8039f, 0.8667f, 0.9294f}.data;
+        skybox_colors[0] = Vec3{0.2353f, 0.2471f, 0.3686f}.data;
     }
 
     /// @brief Renders the complete image using the given settings
@@ -132,7 +150,7 @@ public:
             int row_start = omp_get_wtime();
             for (int x = 0; x < renderSettings.resolution[0] / 5; x++)
             {
-                kernel(x * 5, y * 5);
+                kernel(this, x * 5, y * 5);
             }
             load_rows[y] = omp_get_wtime() - row_start;
         }
@@ -178,7 +196,8 @@ public:
                     row.reserve(renderSettings.resolution[0] * 3 * 4);
                     for (int x = 0; x < renderSettings.resolution[0]; x++)
                     {
-                        __m128 color = kernel(x, y) * calculatedChannelDepth;
+                        __m128 kernel_res = kernel(this, x, y);
+                        __m128 color = _mm_mul_ps(kernel_res, calculatedChannelDepth);
                         float components[4];
                         _mm_storeu_ps(components, color);
                         int r = std::min(255, std::max(0, static_cast<int>(components[0])));
@@ -231,17 +250,18 @@ public:
     LightRay
     GenerateRayFromPixel(float x, float y)
     {
-        // Direction of the camera
+        // Direction of the camera (forward vector)
         __m128 forward = normalized(_mm_sub_ps(lookAt, position));
 
         // Right and up vectors for the camera coordinate system
-        __m128 right = normalized(cross(forward, Vec3(0, 1, 0).data));
+        __m128 upReference = (abs(getY(forward)) > 0.99f) ? Vec3(0, 0, 1).data : Vec3(0, 1, 0).data;
+        __m128 right = normalized(cross(forward, upReference));
         __m128 up = normalized(cross(right, forward));
 
-        // Field of view in radians
+        // Field of view and aspect ratio
         float aspectRatio = static_cast<float>(renderSettings.resolution[0]) / renderSettings.resolution[1];
         float fovY = std::tan((fieldOfView * 0.5f) * (M_PI / 180.0f));
-        float fovX = fovY * aspectRatio; // Corrected this line
+        float fovX = fovY * aspectRatio;
 
         // Normalized device coordinates for the pixel
         float pixelNDC_X = (x + 0.5f) / renderSettings.resolution[0];
@@ -249,12 +269,16 @@ public:
 
         // Screen space coordinates
         float pixelScreen_X = (2.0f * pixelNDC_X - 1.0f) * fovX;
-        __m128 psx = _mm_set_ps1(pixelScreen_X);
         float pixelScreen_Y = (1.0f - 2.0f * pixelNDC_Y) * fovY;
+
+        // Prepare SIMD versions of screen coordinates
+        __m128 psx = _mm_set_ps1(pixelScreen_X);
         __m128 psy = _mm_set_ps1(pixelScreen_Y);
 
-        // Calculate the direction of the ray based on the camera's position and orientation
-        __m128 pixelWorld = _mm_add_ps(_mm_add_ps(forward, _mm_mul_ps(right, psx)), _mm_mul_ps(up, psy));
+        // Calculate the direction of the ray
+        __m128 right_scaled = _mm_mul_ps(right, psx);
+        __m128 up_scaled = _mm_mul_ps(up, psy);
+        __m128 pixelWorld = _mm_add_ps(_mm_add_ps(forward, right_scaled), up_scaled);
         __m128 direction = normalized(pixelWorld);
 
         // Return the generated ray
@@ -262,29 +286,18 @@ public:
     }
 
     // RENDER KERNELS
-    Vec3 kernel_colorTest(int x, int y)
+    __m128 kernel_colorTest(int x, int y)
     {
         float r = (float)x / renderSettings.resolution[0];
         float b = (float)y / renderSettings.resolution[1];
-        return {r, 0.0f, b};
+        return _mm_setr_ps(r, 0.0f, b, 0);
     }
 
-    Vec3 kernel_rayTest(int x, int y)
+    __m128 kernel_rayTest(int x, int y)
     {
         LightRay lr = GenerateRayFromPixel(x, y);
         return lr.direction;
     }
-
-    std::vector<__m128> skybox_colors = {
-        Vec3{0.0f, 0.02f, 0.08f}.data,
-        Vec3{0.3f, 0.2f, 0.5f}.data,
-        Vec3{0.8314f, 0.8118f, 0.7922f}.data,
-        Vec3{0.9331f, 0.8118f, 0.3922f}.data,
-        Vec3{0.8039f, 0.8667f, 0.9294f}.data,
-        Vec3{0.2353f, 0.2471f, 0.3686f}.data};
-
-    std::vector<float> skybox_marks = {
-        0.0f, 0.15f, 0.46f, 0.52f, 0.6f, 1.1f};
 
     // std::vector<Vec3> skybox_colors = {
     //     {0.0f, 0.0f, 0.0f},

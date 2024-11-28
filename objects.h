@@ -11,16 +11,16 @@ protected:
     Vec3 rotation;
 
 public:
-    Vec3 scale;
-    Vec3 position;
+    __m128 scale;
+    __m128 position;
     Material mat;
     char object_type;
     virtual ~Object() = default;
     Object(Vec3 position, Vec3 rotation, Vec3 scale, Material mat, char type)
     {
-        this->position = position;
+        this->position = position.data;
         this->rotation = rotation;
-        this->scale = scale;
+        this->scale = scale.data;
         this->mat = mat;
         object_type = type;
     }
@@ -37,7 +37,7 @@ public:
         Vec3 center_origin_diff = Vec3(ray.origin) - Vec3(position);
 
         float b = Vec3(ray.direction).dot(center_origin_diff);
-        float scaleX = scale.x();
+        float scaleX = getX(scale);
         float c = center_origin_diff.norm2() - scaleX * scaleX;
         float delta = b * b - c;
 
@@ -85,7 +85,7 @@ public:
             return NO_COLLISION;
         }
 
-        float dist = (position - ray.origin).dot(normal) / divider;
+        float dist = dot(_mm_sub_ps(position, ray.origin), normal) / divider;
         if (dist <= 0.01)
         {
             return NO_COLLISION;
@@ -94,13 +94,13 @@ public:
         Vec3 diff = point - position;
 
         float x_dist = diff.cross(localY).length();
-        if (abs(x_dist) > scale.x())
+        if (abs(x_dist) > getX(scale))
         {
             return NO_COLLISION;
         }
 
         float y_dist = diff.cross(localX).length();
-        if (abs(y_dist) > scale.y())
+        if (abs(y_dist) > getY(scale))
         {
             return NO_COLLISION;
         }
@@ -111,12 +111,11 @@ public:
 
 Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
 {
-    __m128 position = _mm_loadr_ps(objectMemStart + 4);
-    __m128 scale = _mm_loadr_ps(objectMemStart + 20);
+    __m128 position = _mm_load_ps(objectMemStart);
+    __m128 scale = _mm_load_ps(objectMemStart + 4);
 
-    if (*(char *)objectMemStart == 0) // Sphere Collision
+    if (*(char *)(objectMemStart + 26) == 0) // Sphere Collision
     {
-
         __m128 center_origin_diff = _mm_sub_ps(ray.origin, position);
 
         float b = dot(ray.direction, center_origin_diff);
@@ -143,9 +142,9 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
     }
     else // Plane Collision
     {
-        __m128 normal = _mm_loadr_ps(objectMemStart + 36);
-        __m128 localX = _mm_loadr_ps(objectMemStart + 52);
-        __m128 localY = _mm_loadr_ps(objectMemStart + 68);
+        __m128 normal = _mm_load_ps(objectMemStart + 8);
+        __m128 localX = _mm_load_ps(objectMemStart + 12);
+        __m128 localY = _mm_load_ps(objectMemStart + 16);
 
         float divider = dot(ray.direction, normal);
         if (abs(divider) <= 0.01)
@@ -162,7 +161,7 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
         __m128 point = _mm_mul_ps(_mm_add_ps(ray.origin, ray.direction), distv);
         __m128 diff = _mm_sub_ps(point, position);
 
-        float x_dist = sqrt(norm2(cross(diff, localY)));
+        float x_dist = sqrt(norm2(cross(diff, localX)));
         if (abs(x_dist) > getX(scale))
         {
             return NO_COLLISION;

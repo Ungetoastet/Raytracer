@@ -97,7 +97,7 @@ protected:
 public:
     static __m128 kernel_full_redirect(Camera *cam, int x, int y)
     {
-        return cam->kernel_rayTest(x, y);
+        return cam->kernel_full(x, y);
     }
 
     __m128 *skybox_colors;
@@ -119,11 +119,11 @@ public:
         // Skybox
         skybox_colors = (__m128 *)aligned_alloc(16, 6 * 16);
         skybox_colors[0] = Vec3{0.0f, 0.02f, 0.08f}.data;
-        skybox_colors[0] = Vec3{0.3f, 0.2f, 0.5f}.data;
-        skybox_colors[0] = Vec3{0.8314f, 0.8118f, 0.7922f}.data;
-        skybox_colors[0] = Vec3{0.9331f, 0.8118f, 0.3922f}.data;
-        skybox_colors[0] = Vec3{0.8039f, 0.8667f, 0.9294f}.data;
-        skybox_colors[0] = Vec3{0.2353f, 0.2471f, 0.3686f}.data;
+        skybox_colors[1] = Vec3{0.3f, 0.2f, 0.5f}.data;
+        skybox_colors[2] = Vec3{0.8314f, 0.8118f, 0.7922f}.data;
+        skybox_colors[3] = Vec3{0.9331f, 0.8118f, 0.3922f}.data;
+        skybox_colors[4] = Vec3{0.8039f, 0.8667f, 0.9294f}.data;
+        skybox_colors[5] = Vec3{0.2353f, 0.2471f, 0.3686f}.data;
     }
 
     /// @brief Renders the complete image using the given settings
@@ -341,7 +341,7 @@ public:
 
         for (int i = 0; i < activeScene.objects.size(); i++)
         {
-            float *objOffset = sceneMemory + (96 * i);
+            float *objOffset = sceneMemory + (28 * i);
             Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
             if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {

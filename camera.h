@@ -117,7 +117,7 @@ public:
         renderSettings = rs;
 
         // Skybox
-        skybox_colors = (__m128 *)aligned_alloc(16, 6 * 16);
+        skybox_colors = (__m128 *)allocate_aligned(16, 6 * 16);
         skybox_colors[0] = Vec3{0.0f, 0.02f, 0.08f}.data;
         skybox_colors[1] = Vec3{0.3f, 0.2f, 0.5f}.data;
         skybox_colors[2] = Vec3{0.8314f, 0.8118f, 0.7922f}.data;

@@ -1,13 +1,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+char *allocate_aligned(size_t alignment, size_t size)
+{
+#ifdef _WIN32
+    return static_cast<char *>(_aligned_malloc(size, alignment)); // Use _aligned_malloc on Windows
+#else
+    return static_cast<char *>(aligned_alloc(alignment, size)); // Use aligned_alloc on Linux
+#endif
+}
+
 /// @brief Bakes the objects inside the scene into memory
 /// @param objectsInScene Scene Objects in OOP
 /// @return Start of memory block
 float *bake_into_memory(std::vector<Object *> &objectsInScene)
 {
     size_t objectCount = objectsInScene.size();
-    float *memory_start = (float *)aligned_alloc(16, 112 * objectCount); // void* arithmetic causes warnings, use float* instead
+    float *memory_start = (float *)allocate_aligned(16, 112 * objectCount); // void* arithmetic causes warnings, use float* instead
     for (int i = 0; i < objectCount; i++)
     {
         float *object_memory_start = memory_start + 28 * i;

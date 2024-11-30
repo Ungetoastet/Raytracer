@@ -22,7 +22,7 @@ int main()
     Material test_red = Material("testred", Vec3(1, 0.1, 0.1), 0.6, 0.5);
     Material test_white = Material("testwhite", Vec3(0.9, 0.9, 0.9), 0.8, 0.5);
     Material test_mirror = Material("testmirror", Vec3(1, 1, 1), 0.9, 0.1);
-    Material test_black = Material("testblack", Vec3(0.1, 0.1, 0.1), 0.4, 0.6);
+    Material test_black = Material("testblack", Vec3(1, 0.1, 0.1), 0.4, 0.6);
 
     Plane light = Plane({0, 1.9f, 0}, Vec3{90, 0, 0}.eulerToRad(), {1, 1, 1}, test_emissive);
     // testscene.objects.push_back(&light);

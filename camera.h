@@ -424,7 +424,8 @@ public:
                 // jedes Subpixel durch kleine Verschiebungen berechnet --> gleichmäßig verteilte Subpixel-Koordinaten
                 float subpixel_x = fx + i;
                 float subpixel_y = fy + j;
-                final_color = _mm_add_ps(final_color, FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, sceneMemory)); // Strahl für jeden Subpixel erzeugt
+                final_color = _mm_add_ps(final_color, FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 0, 0, 0, sceneMemory)); // Strahl für jeden Subpixel erzeugt
+                // final_color = _mm_add_ps(final_color, FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, sceneMemory)); // Strahl für jeden Subpixel erzeugt
             }
         }
         // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet

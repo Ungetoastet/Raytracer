@@ -195,7 +195,7 @@ public:
 
         std::cout << "\nRendering done in " << (omp_get_wtime() - starttime) << std::endl;
 
-        free(sceneMemory);
+        free_aligned(sceneMemory);
 
         starttime = omp_get_wtime();
 

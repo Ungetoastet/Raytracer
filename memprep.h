@@ -1,5 +1,27 @@
 #include <stdlib.h>
 #include <string.h>
+#include <cstdlib>
+#include <memory>
+
+// Cross-platform aligned allocation
+char *allocate_aligned(size_t alignment, size_t size)
+{
+#ifdef _WIN32
+    return static_cast<char *>(_aligned_malloc(size, alignment)); // Use _aligned_malloc on Windows
+#else
+    return static_cast<char *>(aligned_alloc(alignment, size)); // Use aligned_alloc on Linux
+#endif
+}
+
+// Cross-platform aligned free
+void free_aligned(void *ptr)
+{
+#ifdef _WIN32
+    _aligned_free(ptr); // Use _aligned_free on Windows
+#else
+    free(ptr); // Use free on Linux
+#endif
+}
 
 /// @brief Bakes the objects inside the scene into memory
 /// @param objectsInScene Scene Objects in OOP
@@ -7,7 +29,7 @@
 char *bake_into_memory(std::vector<Object *> &objectsInScene)
 {
     size_t objectCount = objectsInScene.size();
-    char *memory_start = (char *)aligned_alloc(16, 108 * objectCount); // void* arithmetic causes warnings, use char* instead
+    char *memory_start = allocate_aligned(16, 108 * objectCount); // void* arithmetic causes warnings, use char* instead
     for (int i = 0; i < objectCount; i++)
     {
         int object_memory_start = 108 * i;

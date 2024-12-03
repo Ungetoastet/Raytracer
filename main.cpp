@@ -47,6 +47,6 @@ int main()
     Camera testcam = Camera({1, 0, -8}, {0, 0, 0}, 45, rendersettings, testscene);
 
     // Use kernel TODO: MAKE KERNELS STATIC TO SKIP REDIRECT
-    testcam.RenderImage(Camera::kernel_full_redirect);
+    testcam.RenderImage(Camera::kernel_full);
     return 0;
 }

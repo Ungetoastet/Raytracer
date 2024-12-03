@@ -95,11 +95,6 @@ protected:
     float *sceneMemory;
 
 public:
-    static __m128 kernel_full_redirect(Camera *cam, int x, int y)
-    {
-        return cam->kernel_full(x, y);
-    }
-
     __m128 *skybox_colors;
 
     std::vector<float> skybox_marks = {
@@ -286,16 +281,16 @@ public:
     }
 
     // RENDER KERNELS
-    __m128 kernel_colorTest(int x, int y)
+    static __m128 kernel_colorTest(Camera *cam, int x, int y)
     {
-        float r = (float)x / renderSettings.resolution[0];
-        float b = (float)y / renderSettings.resolution[1];
+        float r = (float)x / cam->renderSettings.resolution[0];
+        float b = (float)y / cam->renderSettings.resolution[1];
         return _mm_setr_ps(r, 0.0f, b, 0);
     }
 
-    __m128 kernel_rayTest(int x, int y)
+    static __m128 kernel_rayTest(Camera *cam, int x, int y)
     {
-        LightRay lr = GenerateRayFromPixel(x, y);
+        LightRay lr = cam->GenerateRayFromPixel(x, y);
         return lr.direction;
     }
 
@@ -307,18 +302,18 @@ public:
     // std::vector<float> skybox_marks = {
     //     0.0f, 1.1f};
 
-    __m128 kernel_skyboxOnly(int x, int y)
+    static __m128 kernel_skyboxOnly(Camera *cam, int x, int y)
     {
-        LightRay lr = GenerateRayFromPixel(x, y);
+        LightRay lr = cam->GenerateRayFromPixel(x, y);
         const float gradient_pos = (getY(lr.direction) * 0.5f) + 0.5f;
 
-        return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+        return get_gradient(cam->skybox_colors, cam->skybox_marks, gradient_pos);
     }
 
-    __m128 kernel_flatObjects(int x, int y)
+    static __m128 kernel_flatObjects(Camera *cam, int x, int y)
     {
-        LightRay lr = GenerateRayFromPixel(x, y);
-        for (Object *o : activeScene.objects)
+        LightRay lr = cam->GenerateRayFromPixel(x, y);
+        for (Object *o : cam->activeScene.objects)
         {
             Collision c = o->CheckCollision(lr);
             if (c.valid)
@@ -328,20 +323,20 @@ public:
         }
         const float gradient_pos = (getY(lr.direction) * 0.5f) + 0.5f;
 
-        return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+        return get_gradient(cam->skybox_colors, cam->skybox_marks, gradient_pos);
     }
 
-    __m128 kernel_normals(int x, int y)
+    static __m128 kernel_normals(Camera *cam, int x, int y)
     {
-        LightRay lr = GenerateRayFromPixel(x, y);
+        LightRay lr = cam->GenerateRayFromPixel(x, y);
 
         Collision closestCollision = NO_COLLISION;
         float closestDistance = 9999;
         float *closest_obj_ptr = 0;
 
-        for (int i = 0; i < activeScene.objects.size(); i++)
+        for (int i = 0; i < cam->activeScene.objects.size(); i++)
         {
-            float *objOffset = sceneMemory + (28 * i);
+            float *objOffset = cam->sceneMemory + (28 * i);
             Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
             if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
@@ -364,17 +359,17 @@ public:
 
         const float gradient_pos = (getY(lr.direction) * 0.5f) + 0.5f;
 
-        return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+        return get_gradient(cam->skybox_colors, cam->skybox_marks, gradient_pos);
     }
 
     /// @brief No scattering, no absorbsion, ten bounces
-    __m128 kernel_supershiny(int x, int y)
+    static __m128 kernel_supershiny(Camera *cam, int x, int y)
     {
-        LightRay lr = GenerateRayFromPixel(x, y);
+        LightRay lr = cam->GenerateRayFromPixel(x, y);
         for (int bounce = 0; bounce <= 10; bounce++)
         {
             bool hit = false;
-            for (Object *o : activeScene.objects)
+            for (Object *o : cam->activeScene.objects)
             {
                 Collision c = o->CheckCollision(lr);
                 if (c.valid)
@@ -391,29 +386,29 @@ public:
             }
 
             const float gradient_pos = (getY(lr.direction) * 0.5f) + 0.5f;
-            return get_gradient(skybox_colors, skybox_marks, gradient_pos);
+            return get_gradient(cam->skybox_colors, cam->skybox_marks, gradient_pos);
         }
 
         // Max Bounces
         return _mm_setzero_ps();
     }
 
-    __m128 kernel_flatColors(int x, int y)
+    static __m128 kernel_flatColors(Camera *cam, int x, int y)
     {
-        return FullTrace(GenerateRayFromPixel(x, y), 0, 0, 0, sceneMemory);
+        return cam->FullTrace(cam->GenerateRayFromPixel(x, y), 0, 0, 0, cam->sceneMemory);
     }
 
-    __m128 kernel_scattertest(int x, int y)
+    static __m128 kernel_scattertest(Camera *cam, int x, int y)
     {
-        return FullTrace(GenerateRayFromPixel(x, y), 5, 10, 4, sceneMemory);
+        return cam->FullTrace(cam->GenerateRayFromPixel(x, y), 5, 10, 4, cam->sceneMemory);
     }
 
     // berechnet Farbe eines Pixels mit Supersampling
     // Supersampling: verbessert Bildqualität indem mehrere Strahlen pro Pixel simuliert und deren Ergebnisse dann gemittelt werden --> reduziert Bildrauschen und Treppeneffekte bei scharfen Kanten (Aliasing)
-    __m128 kernel_full(int x, int y)
+    static __m128 kernel_full(Camera *cam, int x, int y)
     {
         __m128 final_color;
-        float step_width = 1.0f / renderSettings.supersampling_steps;
+        float step_width = 1.0f / cam->renderSettings.supersampling_steps;
         float fx = static_cast<float>(x);
         float fy = static_cast<float>(y);
         // innerhalb jedes Pixels mehrere Unterpixel simulieren
@@ -424,13 +419,13 @@ public:
                 // jedes Subpixel durch kleine Verschiebungen berechnet --> gleichmäßig verteilte Subpixel-Koordinaten
                 float subpixel_x = fx + i;
                 float subpixel_y = fy + j;
-                final_color = _mm_add_ps(final_color, FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 0, 0, 0, sceneMemory)); // Strahl für jeden Subpixel erzeugt
+                final_color = _mm_add_ps(final_color, cam->FullTrace(cam->GenerateRayFromPixel(subpixel_x, subpixel_y), 0, 0, 0, cam->sceneMemory)); // Strahl für jeden Subpixel erzeugt
                 // final_color = _mm_add_ps(final_color, FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, sceneMemory)); // Strahl für jeden Subpixel erzeugt
             }
         }
         // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet
         // berechnet Durchschnitt der Subpixelfarben um endgültige Pixelfarbe zu bestimmen
-        __m128 div = _mm_set1_ps(renderSettings.supersampling_steps * renderSettings.supersampling_steps);
+        __m128 div = _mm_set1_ps(cam->renderSettings.supersampling_steps * cam->renderSettings.supersampling_steps);
         return _mm_div_ps(final_color, div);
     }
 };

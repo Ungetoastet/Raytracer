@@ -129,6 +129,8 @@ public:
     /// @brief Renders the complete image using the given settings
     void RenderImage(RenderKernel kernel)
     {
+        std::cout << "Objects in scene: " << activeScene.objects.size() << std::endl;
+
         std::string ppm = generate_PPM_header(renderSettings);                                      // Header der PPM-Datei erstellt --> Infos wie Bildauflösung, Channel-Depth
         const __m128 calculatedChannelDepth = _mm_set_ps1((1 << renderSettings.channel_depth) - 1); // Berechnung Channel-Depth
 

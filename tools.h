@@ -153,6 +153,25 @@ struct alignas(16) Vec3
         __m128 mult = _mm_set1_ps(M_PI / 180.0f);
         return _mm_mul_ps(mult, data);
     }
+    /// @return The rotation of the vector in radians
+    Vec3 toRotation() const
+    {
+        Vec3 zAxis(0.0f, 0.0f, 1.0f);
+        Vec3 targetNormalized = normalized();
+
+        // Angle between vectors (using dot product)
+        float angle = std::acos(zAxis.dot(targetNormalized));
+
+        // Find rotation axis using cross product
+        Vec3 axis = zAxis.cross(targetNormalized).normalized();
+
+        // Convert axis-angle to Euler angles
+        float yaw = std::atan2(axis.y(), axis.x()); // Rotation around Y-axis
+        float pitch = angle;                        // Rotation around X-axis
+        float roll = 0.0f;                          // No roll for this case
+
+        return Vec3(pitch, yaw, roll);
+    }
 };
 
 std::string readFile(const std::string &path_to_file)

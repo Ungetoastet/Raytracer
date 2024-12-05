@@ -162,3 +162,29 @@ public:
     }
     Scene() {};
 };
+
+void CreateCube(Vec3 position, Vec3 rotation, Vec3 scale, Material mat, Scene *s)
+{
+    Vec3 localX = Vec3(getX(scale.data), 0.0f, 0.0f);
+    Vec3 localY = Vec3(0.0f, getY(scale.data), 0.0f);
+    Vec3 localZ = Vec3(0.0f, 0.0f, getZ(scale.data));
+
+    // Apply rotation to local axes
+    localX = localX.rotate(rotation);
+    localY = localY.rotate(rotation);
+    localZ = localZ.rotate(rotation);
+
+    // Correctly assign rotations for each face
+    vector<Vec3> localRotate;
+    localRotate.push_back(localZ.toRotation());
+    localRotate.push_back(localX.toRotation());
+    localRotate.push_back(localY.toRotation());
+
+    // Create planes with correct positions and rotations
+    // s->objects.push_back(new Plane(position + localZ, localRotate[0], Vec3(1, 1, 1), mat)); // Front
+    // s->objects.push_back(new Plane(position + localY, localRotate[2], Vec3(1, 1, 1), mat)); // Top
+    s->objects.push_back(new Plane(position + localX, localRotate[1], Vec3(1, 1, 1), mat)); // Right
+    // s->objects.push_back(new Plane(position - localZ, localRotate[0], Vec3(1, 1, 1), mat)); // Back
+    // s->objects.push_back(new Plane(position - localY, localRotate[2], Vec3(1, 1, 1), mat)); // Bottom
+    s->objects.push_back(new Plane(position - localX, localRotate[1], Vec3(1, 1, 1), mat)); // Left
+};

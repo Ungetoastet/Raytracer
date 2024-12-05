@@ -130,7 +130,7 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
 
         float dist = -b - sqrtf(delta);
 
-        if (dist <= 0.01)
+        if (dist <= 0.001)
         {
             return NO_COLLISION;
         }
@@ -153,7 +153,7 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
         }
 
         float dist = dot(_mm_sub_ps(position, ray.origin), normal) / divider;
-        if (dist <= 0.01)
+        if (dist <= 0.001)
         {
             return NO_COLLISION;
         }

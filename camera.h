@@ -49,10 +49,10 @@ private:
         if (closestCollision.valid) // wenn Kollision gefunden
         {
             // Objekteigenschaften auslesen
-            float intensity = *(float *)(closest_obj_ptr + 24);
+            float intensity = *(closest_obj_ptr + 24);
             __m128 intv = _mm_set_ps1(intensity);
             __m128 intvr = _mm_set_ps1(1 - intensity);
-            float diffuse = *(float *)(closest_obj_ptr + 25);
+            float diffuse = *(closest_obj_ptr + 25);
 
             // Scatter and bounce
             __m128 objCol = _mm_load_ps(closest_obj_ptr + 20);
@@ -66,8 +66,13 @@ private:
             __m128 resColor = _mm_setzero_ps();
             for (int s = 0; s < scatters; s++)
             {
-                __m128 reflected = normalized(scatter(mirrorToNormalized(closestCollision.incoming_direction, closestCollision.normal), diffuse, &rng_seed));                                                             // normalisierte Spiegelung, hinzufügen zufällige Streuung
-                __m128 hit_color = _mm_add_ps(_mm_mul_ps(objCol, intvr), _mm_mul_ps(FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatters - scatterreduction, scatterreduction, sceneMem), intv)); // Rekursion mit kleinerer bounces- und scatter-Anzahl
+                __m128 reflected = normalized(
+                    scatter(mirrorToNormalized(closestCollision.incoming_direction, closestCollision.normal), diffuse, &rng_seed)); // normalisierte Spiegelung, hinzufügen zufällige Streuung
+                __m128 hit_color = _mm_add_ps(
+                    _mm_mul_ps(objCol, intvr),
+                    _mm_mul_ps(
+                        FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatters - scatterreduction, scatterreduction, sceneMem),
+                        intv)); // Rekursion mit kleinerer bounces- und scatter-Anzahl
                 resColor = _mm_add_ps(resColor, hit_color);
             }
 
@@ -395,19 +400,7 @@ public:
 
     static __m128 kernel_flatColors(Camera *cam, int x, int y)
     {
-        return cam->FullTrace(cam->GenerateRayFromPixel(x, y), 0, 0, 0, cam->sceneMemory);
-    }
-
-    static __m128 kernel_scattertest(Camera *cam, int x, int y)
-    {
-        return cam->FullTrace(cam->GenerateRayFromPixel(x, y), 5, 10, 4, cam->sceneMemory);
-    }
-
-    // berechnet Farbe eines Pixels mit Supersampling
-    // Supersampling: verbessert Bildqualität indem mehrere Strahlen pro Pixel simuliert und deren Ergebnisse dann gemittelt werden --> reduziert Bildrauschen und Treppeneffekte bei scharfen Kanten (Aliasing)
-    static __m128 kernel_full(Camera *cam, int x, int y)
-    {
-        __m128 final_color;
+        __m128 final_color = _mm_setzero_ps();
         float step_width = 1.0f / cam->renderSettings.supersampling_steps;
         float fx = static_cast<float>(x);
         float fy = static_cast<float>(y);
@@ -420,7 +413,36 @@ public:
                 float subpixel_x = fx + i;
                 float subpixel_y = fy + j;
                 final_color = _mm_add_ps(final_color, cam->FullTrace(cam->GenerateRayFromPixel(subpixel_x, subpixel_y), 0, 0, 0, cam->sceneMemory)); // Strahl für jeden Subpixel erzeugt
-                // final_color = _mm_add_ps(final_color, FullTrace(GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, sceneMemory)); // Strahl für jeden Subpixel erzeugt
+            }
+        }
+        // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet
+        // berechnet Durchschnitt der Subpixelfarben um endgültige Pixelfarbe zu bestimmen
+        __m128 div = _mm_set1_ps(cam->renderSettings.supersampling_steps * cam->renderSettings.supersampling_steps);
+        return _mm_div_ps(final_color, div);
+    }
+
+    static __m128 kernel_scattertest(Camera *cam, int x, int y)
+    {
+        return cam->FullTrace(cam->GenerateRayFromPixel(x, y), 5, 10, 4, cam->sceneMemory);
+    }
+
+    // berechnet Farbe eines Pixels mit Supersampling
+    // Supersampling: verbessert Bildqualität indem mehrere Strahlen pro Pixel simuliert und deren Ergebnisse dann gemittelt werden --> reduziert Bildrauschen und Treppeneffekte bei scharfen Kanten (Aliasing)
+    static __m128 kernel_full(Camera *cam, int x, int y)
+    {
+        __m128 final_color = _mm_setzero_ps();
+        float step_width = 1.0f / cam->renderSettings.supersampling_steps;
+        float fx = static_cast<float>(x);
+        float fy = static_cast<float>(y);
+        // innerhalb jedes Pixels mehrere Unterpixel simulieren
+        for (float i = 0; i <= 1 - step_width + 0.001f; i += step_width)
+        {
+            for (float j = 0; j <= 1 - step_width + 0.001f; j += step_width)
+            {
+                // jedes Subpixel durch kleine Verschiebungen berechnet --> gleichmäßig verteilte Subpixel-Koordinaten
+                float subpixel_x = fx + i;
+                float subpixel_y = fy + j;
+                final_color = _mm_add_ps(final_color, cam->FullTrace(cam->GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, cam->sceneMemory)); // Strahl für jeden Subpixel erzeugt
             }
         }
         // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet

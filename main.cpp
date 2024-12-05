@@ -25,17 +25,17 @@ int main()
     Material test_black = Material("testblack", Vec3(1, 0.1, 0.1), 0.4, 0.6);
 
     Plane light = Plane({0, 1.9f, 0}, Vec3{90, 0, 0}.eulerToRad(), {1, 1, 1}, test_emissive);
-    // testscene.objects.push_back(&light);
+    testscene.objects.push_back(&light);
     Plane ceiling = Plane({0, 2, 0}, Vec3{90, 0, 0}.eulerToRad(), {5, 5, 5}, test_white);
-    // testscene.objects.push_back(&ceiling);
+    testscene.objects.push_back(&ceiling);
     Plane ground = Plane({0, -2, 0}, Vec3{90, 0, 0}.eulerToRad(), {5, 5, 5}, test_white);
-    // testscene.objects.push_back(&ground);
+    testscene.objects.push_back(&ground);
     Plane back_wall = Plane({0, 0, 5}, Vec3{0, 0, 0}.eulerToRad(), {5, 2, 5}, test_white);
-    // testscene.objects.push_back(&back_wall);
+    testscene.objects.push_back(&back_wall);
     Plane left_wall = Plane({3, 0, 0}, Vec3{0, 90, 0}.eulerToRad(), {5, 2, 5}, test_blue);
-    // testscene.objects.push_back(&left_wall);
+    testscene.objects.push_back(&left_wall);
     Plane right_wall = Plane({-3, 0, 0}, Vec3{0, 90, 0}.eulerToRad(), {5, 2, 5}, test_red);
-    // testscene.objects.push_back(&right_wall);
+    testscene.objects.push_back(&right_wall);
     Sphere ball_R = Sphere({-1.5f, -2, 0}, 1, test_mirror);
     testscene.objects.push_back(&ball_R);
     Sphere ball_L = Sphere({1, -1, -1}, 1.5f, test_white);
@@ -44,9 +44,8 @@ int main()
     testscene.objects.push_back(&ball_B);
 
     RenderSettings rendersettings = RenderSettings("./Documentation/rendersettings.xml");
-    Camera testcam = Camera({1, 0, -8}, {0, 0, 0}, 45, rendersettings, testscene);
+    Camera testcam = Camera({0, 0, -8}, {0, 0, 0}, 45, rendersettings, testscene);
 
-    // Use kernel TODO: MAKE KERNELS STATIC TO SKIP REDIRECT
     testcam.RenderImage(Camera::kernel_full);
     return 0;
 }

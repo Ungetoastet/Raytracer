@@ -158,16 +158,16 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
             return NO_COLLISION;
         }
         __m128 distv = _mm_set_ps1(dist);
-        __m128 point = _mm_mul_ps(_mm_add_ps(ray.origin, ray.direction), distv);
+        __m128 point = _mm_add_ps(_mm_mul_ps(ray.direction, distv), ray.origin);
         __m128 diff = _mm_sub_ps(point, position);
 
-        float x_dist = sqrt(norm2(cross(diff, localX)));
+        float x_dist = sqrt(norm2(cross(diff, localY)));
         if (abs(x_dist) > getX(scale))
         {
             return NO_COLLISION;
         }
 
-        float y_dist = sqrt(norm2(cross(diff, localY)));
+        float y_dist = sqrt(norm2(cross(diff, localX)));
         if (abs(y_dist) > getY(scale))
         {
             return NO_COLLISION;

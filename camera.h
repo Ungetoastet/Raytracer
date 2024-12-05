@@ -431,23 +431,24 @@ public:
     static __m128 kernel_full(Camera *cam, int x, int y)
     {
         __m128 final_color = _mm_setzero_ps();
-        float step_width = 1.0f / cam->renderSettings.supersampling_steps;
+        int steps = cam->renderSettings.supersampling_steps;
+        float step_width = 1.0f / steps;
         float fx = static_cast<float>(x);
         float fy = static_cast<float>(y);
         // innerhalb jedes Pixels mehrere Unterpixel simulieren
-        for (float i = 0; i <= 1 - step_width + 0.001f; i += step_width)
+        for (int i = 0; i < steps; i++)
         {
-            for (float j = 0; j <= 1 - step_width + 0.001f; j += step_width)
+            for (int j = 0; j < steps; j++)
             {
                 // jedes Subpixel durch kleine Verschiebungen berechnet --> gleichmäßig verteilte Subpixel-Koordinaten
-                float subpixel_x = fx + i;
-                float subpixel_y = fy + j;
+                float subpixel_x = fx + (i + 0.5f) * step_width;
+                float subpixel_y = fy + (j + 0.5f) * step_width;
                 final_color = _mm_add_ps(final_color, cam->FullTrace(cam->GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, cam->sceneMemory)); // Strahl für jeden Subpixel erzeugt
             }
         }
         // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet
         // berechnet Durchschnitt der Subpixelfarben um endgültige Pixelfarbe zu bestimmen
-        __m128 div = _mm_set1_ps(cam->renderSettings.supersampling_steps * cam->renderSettings.supersampling_steps);
+        __m128 div = _mm_set1_ps(steps * steps);
         return _mm_div_ps(final_color, div);
     }
 };

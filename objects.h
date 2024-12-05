@@ -56,32 +56,6 @@ public:
     }
 };
 
-class Cube : public Object
-{
-public:
-    Cube(Vec3 position, Vec3 rotation, Vec3 scale) : Object(position, rotation, scale)
-    {
-        Vec3 localX = Vec3(scale.x, 0, 0);
-        Vec3 localY = Vec3(0, scale.y, 0);
-        Vec3 localZ = Vec3(0, 0, scale.z);
-
-        localX = localX.rotate(rotation);
-        localY = localY.rotate(rotation);
-        localZ = localZ.rotate(rotation);
-
-        localX = localX + position;
-        localY = localY + position;
-        localZ = localZ + position;
-
-        Plane p1 = Plane();
-        Plane p2 = Plane();
-        Plane p3 = Plane();
-        Plane p4 = Plane();
-        Plane p5 = Plane();
-        Plane p6 = Plane();
-    };
-};
-
 class Plane : public Object
 {
 private:
@@ -126,4 +100,34 @@ public:
 
         return {true, point, normal, ray.direction};
     }
+};
+
+void CreateCube(Vec3 position, Vec3 rotation, Vec3 scale, Scene &s)
+{
+    Vec3 localX = Vec3(scale.x, 0, 0);
+    Vec3 localY = Vec3(0, scale.y, 0);
+    Vec3 localZ = Vec3(0, 0, scale.z);
+
+    localX = localX.rotate(rotation);
+    localY = localY.rotate(rotation);
+    localZ = localZ.rotate(rotation);
+
+    vector<Vec3> localRotate;
+    localRotate.push_back(Vec3(0, 0, 0));
+    localRotate.push_back(Vec3(0, 90, 0).eulerToRad());
+    localRotate.push_back(Vec3(90, 0, 0).eulerToRad());
+
+    Plane p1 = Plane(position + localX, localRotate[0], Vec3(1, 1, 1));
+    Plane p2 = Plane(position + localY, localRotate[2], Vec3(1, 1, 1));
+    Plane p3 = Plane(position + localZ, localRotate[1], Vec3(1, 1, 1));
+    Plane p4 = Plane(position - localX, localRotate[0], Vec3(1, 1, 1));
+    Plane p5 = Plane(position - localY, localRotate[2], Vec3(1, 1, 1));
+    Plane p6 = Plane(position - localZ, localRotate[1], Vec3(1, 1, 1));
+
+    s.objects.push_back(&p1);
+    s.objects.push_back(&p2);
+    s.objects.push_back(&p3);
+    s.objects.push_back(&p4);
+    s.objects.push_back(&p5);
+    s.objects.push_back(&p6);
 };

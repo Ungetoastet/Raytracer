@@ -58,6 +58,28 @@ public:
 
 class Cube : public Object
 {
+public:
+    Cube(Vec3 position, Vec3 rotation, Vec3 scale) : Object(position, rotation, scale)
+    {
+        Vec3 localX = Vec3(scale.x, 0, 0);
+        Vec3 localY = Vec3(0, scale.y, 0);
+        Vec3 localZ = Vec3(0, 0, scale.z);
+
+        localX = localX.rotate(rotation);
+        localY = localY.rotate(rotation);
+        localZ = localZ.rotate(rotation);
+
+        localX = localX + position;
+        localY = localY + position;
+        localZ = localZ + position;
+
+        Plane p1 = Plane();
+        Plane p2 = Plane();
+        Plane p3 = Plane();
+        Plane p4 = Plane();
+        Plane p5 = Plane();
+        Plane p6 = Plane();
+    };
 };
 
 class Plane : public Object

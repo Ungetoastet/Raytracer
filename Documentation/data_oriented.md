@@ -37,3 +37,18 @@ Object Type IDs:
 | Run 1 | Run 2 | Run 3 |
 | ----- | ----- | ----- |
 | 11.4s | 11.1s | 10.5s |
+
+# New Data Structure after Vectorization
+
+| Information             | Memory Size in Bytes         | Memory Address              |
+| ----------------------- | ---------------------------- | --------------------------- |
+| Object Position         | 4 (Vector) \* 4 (float)      | 0                           |
+| Object Scale            | 4 (Vector) \* 4 (float)      | 16 (4F)                     |
+| Other Object Attributes | 3 \* 4 (Vector) \* 4 (float) | 32 (8F), 48 (12F), 64 (16F) |
+| Material: Color         | 4 (Vector) \* 4 (float)      | 80 (20F)                    |
+| Material: intensity     | 4 (float)                    | 96 (24F)                    |
+| Material: diffuse       | 4 (float)                    | 100 (25F)                   |
+| Object Type ID          | 1 (char)                     | 104 (26F)                   |
+| **SUM**                 | **112**                      | (28F)                       |
+
+_112 for 16-byte alignment._

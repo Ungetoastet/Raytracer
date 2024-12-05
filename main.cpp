@@ -2,6 +2,7 @@
 #include <string>
 
 #include "tools.h"
+#include "m128Utils.h"
 #include "lightray.h"
 #include "rendersettings.h"
 #include "rendertools.h"
@@ -19,9 +20,9 @@ int main()
     Material test_emissive = Material("testemi", Vec3(2.0, 2.0, 2.0), 0.3, -1);
     Material test_blue = Material("testblue", Vec3(0.1, 0.1, 1), 0.6, 0.5);
     Material test_red = Material("testred", Vec3(1, 0.1, 0.1), 0.6, 0.5);
-    Material test_white = Material("testwhite", Vec3(1, 1, 1), 0.8, 0.5);
+    Material test_white = Material("testwhite", Vec3(0.9, 0.9, 0.9), 0.8, 0.5);
     Material test_mirror = Material("testmirror", Vec3(1, 1, 1), 0.9, 0.1);
-    Material test_black = Material("testblack", Vec3(0.1, 0.1, 0.1), 0.4, 0.6);
+    Material test_black = Material("testblack", Vec3(1, 0.1, 0.1), 0.4, 0.6);
 
     Plane light = Plane({0, 1.9f, 0}, Vec3{90, 0, 0}.eulerToRad(), {1, 1, 1}, test_emissive);
     testscene.objects.push_back(&light);
@@ -45,8 +46,6 @@ int main()
     RenderSettings rendersettings = RenderSettings("./Documentation/rendersettings.xml");
     Camera testcam = Camera({0, 0, -8}, {0, 0, 0}, 45, rendersettings, testscene);
 
-    // Bind kernel
-    auto boundKernel = std::bind(&Camera::kernel_full, &testcam, std::placeholders::_1, std::placeholders::_2);
-    testcam.RenderImage(boundKernel);
+    testcam.RenderImage(Camera::kernel_full);
     return 0;
 }

@@ -3,6 +3,7 @@
 #include <cstring>
 
 using namespace std;
+using namespace m128Calc;
 
 class Object
 {
@@ -10,16 +11,16 @@ protected:
     Vec3 rotation;
 
 public:
-    Vec3 scale;
-    Vec3 position;
+    __m128 scale;
+    __m128 position;
     Material mat;
     char object_type;
     virtual ~Object() = default;
     Object(Vec3 position, Vec3 rotation, Vec3 scale, Material mat, char type)
     {
-        this->position = position;
+        this->position = position.data;
         this->rotation = rotation;
-        this->scale = scale;
+        this->scale = scale.data;
         this->mat = mat;
         object_type = type;
     }
@@ -33,10 +34,11 @@ public:
 
     Collision CheckCollision(LightRay ray) override
     {
-        Vec3 center_origin_diff = ray.origin - position;
+        Vec3 center_origin_diff = Vec3(ray.origin) - Vec3(position);
 
-        float b = ray.direction.dot(center_origin_diff);
-        float c = center_origin_diff.norm2() - scale.x * scale.x;
+        float b = Vec3(ray.direction).dot(center_origin_diff);
+        float scaleX = getX(scale);
+        float c = center_origin_diff.norm2() - scaleX * scaleX;
         float delta = b * b - c;
 
         if (delta < 0)
@@ -54,7 +56,7 @@ public:
         Vec3 point = ray.origin + ray.direction * dist;
         Vec3 normal = (point - position).normalized();
 
-        return {true, point, normal, ray.direction, dist};
+        return {true, point.data, normal.data, ray.direction, dist};
     }
 };
 
@@ -65,25 +67,25 @@ class Cube : public Object
 class Plane : public Object
 {
 public:
-    Vec3 normal;
-    Vec3 localX;
-    Vec3 localY;
+    __m128 normal;
+    __m128 localX;
+    __m128 localY;
     Plane(Vec3 position, Vec3 rotation, Vec3 scale, Material mat) : Object(position, rotation, scale, mat, 1)
     {
-        normal = Vec3{0.0f, 0.0f, 1.0f}.rotate(rotation).normalized();
-        localX = Vec3{1.0f, 0.0f, 0.0f}.rotate(rotation).normalized();
-        localY = Vec3{0.0f, 1.0f, 0.0f}.rotate(rotation).normalized();
+        normal = normalized(Vec3{0.0f, 0.0f, 1.0f}.rotate(rotation).data);
+        localX = normalized(Vec3{1.0f, 0.0f, 0.0f}.rotate(rotation).data);
+        localY = normalized(Vec3{0.0f, 1.0f, 0.0f}.rotate(rotation).data);
     };
 
     Collision CheckCollision(LightRay ray) override
     {
-        float divider = ray.direction.dot(normal);
+        float divider = Vec3(ray.direction).dot(normal);
         if (abs(divider) <= 0.01)
         {
             return NO_COLLISION;
         }
 
-        float dist = (position - ray.origin).dot(normal) / divider;
+        float dist = dot(_mm_sub_ps(position, ray.origin), normal) / divider;
         if (dist <= 0.01)
         {
             return NO_COLLISION;
@@ -92,36 +94,33 @@ public:
         Vec3 diff = point - position;
 
         float x_dist = diff.cross(localY).length();
-        if (abs(x_dist) > scale.x)
+        if (abs(x_dist) > getX(scale))
         {
             return NO_COLLISION;
         }
 
         float y_dist = diff.cross(localX).length();
-        if (abs(y_dist) > scale.y)
+        if (abs(y_dist) > getY(scale))
         {
             return NO_COLLISION;
         }
 
-        return {true, point, normal, ray.direction, dist};
+        return {true, point.data, normal, ray.direction, dist};
     }
 };
 
-Collision MemoryCollision(LightRay &ray, char *objectMemStart)
+Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
 {
-    Vec3 position;
-    std::memcpy(&position, objectMemStart + 4, 16);
+    __m128 position = _mm_load_ps(objectMemStart);
+    __m128 scale = _mm_load_ps(objectMemStart + 4);
 
-    Vec3 scale;
-    std::memcpy(&scale, objectMemStart + 20, 16);
-
-    if (*(char *)objectMemStart == 0) // Sphere Collision
+    if (*(char *)(objectMemStart + 26) == 0) // Sphere Collision
     {
+        __m128 center_origin_diff = _mm_sub_ps(ray.origin, position);
 
-        Vec3 center_origin_diff = ray.origin - position;
-
-        float b = ray.direction.dot(center_origin_diff);
-        float c = center_origin_diff.norm2() - scale.x * scale.x;
+        float b = dot(ray.direction, center_origin_diff);
+        float scaleX = getX(scale);
+        float c = norm2(center_origin_diff) - scaleX * scaleX;
         float delta = b * b - c;
 
         if (delta < 0)
@@ -136,42 +135,40 @@ Collision MemoryCollision(LightRay &ray, char *objectMemStart)
             return NO_COLLISION;
         }
 
-        Vec3 point = ray.origin + ray.direction * dist;
-        Vec3 normal = (point - position).normalized();
+        __m128 point = _mm_add_ps(ray.origin, _mm_mul_ps(ray.direction, _mm_set_ps1(dist)));
+        __m128 normal = normalized(_mm_sub_ps(point, position));
 
         return {true, point, normal, ray.direction, dist};
     }
     else // Plane Collision
     {
-        Vec3 normal;
-        std::memcpy(&normal, objectMemStart + 36, 16);
-        Vec3 localX;
-        std::memcpy(&localX, objectMemStart + 52, 16);
-        Vec3 localY;
-        std::memcpy(&localY, objectMemStart + 68, 16);
+        __m128 normal = _mm_load_ps(objectMemStart + 8);
+        __m128 localX = _mm_load_ps(objectMemStart + 12);
+        __m128 localY = _mm_load_ps(objectMemStart + 16);
 
-        float divider = ray.direction.dot(normal);
+        float divider = dot(ray.direction, normal);
         if (abs(divider) <= 0.01)
         {
             return NO_COLLISION;
         }
 
-        float dist = (position - ray.origin).dot(normal) / divider;
+        float dist = dot(_mm_sub_ps(position, ray.origin), normal) / divider;
         if (dist <= 0.01)
         {
             return NO_COLLISION;
         }
-        Vec3 point = ray.origin + ray.direction * dist;
-        Vec3 diff = point - position;
+        __m128 distv = _mm_set_ps1(dist);
+        __m128 point = _mm_add_ps(_mm_mul_ps(ray.direction, distv), ray.origin);
+        __m128 diff = _mm_sub_ps(point, position);
 
-        float x_dist = diff.cross(localY).length();
-        if (abs(x_dist) > scale.x)
+        float x_dist = sqrt(norm2(cross(diff, localY)));
+        if (abs(x_dist) > getX(scale))
         {
             return NO_COLLISION;
         }
 
-        float y_dist = diff.cross(localX).length();
-        if (abs(y_dist) > scale.y)
+        float y_dist = sqrt(norm2(cross(diff, localX)));
+        if (abs(y_dist) > getY(scale))
         {
             return NO_COLLISION;
         }

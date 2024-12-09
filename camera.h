@@ -14,7 +14,7 @@ class Camera
 
 private:
     /// @brief Seed for randomness
-    unsigned int rng_seed = 42;
+    __m128i rng_seed[2];
 
     /// @brief Generates the full recursion for a single ray
     /// @param scene active scene
@@ -67,7 +67,7 @@ private:
             for (int s = 0; s < scatters; s++)
             {
                 __m128 reflected = normalized(
-                    scatter(mirrorToNormalized(closestCollision.incoming_direction, closestCollision.normal), diffuse, &rng_seed)); // normalisierte Spiegelung, hinzufügen zufällige Streuung
+                    scatter(mirrorToNormalized(closestCollision.incoming_direction, closestCollision.normal), diffuse, rng_seed)); // normalisierte Spiegelung, hinzufügen zufällige Streuung
                 __m128 hit_color = _mm_add_ps(
                     _mm_mul_ps(objCol, intvr),
                     _mm_mul_ps(
@@ -124,6 +124,9 @@ public:
         skybox_colors[3] = Vec3{0.9331f, 0.8118f, 0.3922f}.data;
         skybox_colors[4] = Vec3{0.8039f, 0.8667f, 0.9294f}.data;
         skybox_colors[5] = Vec3{0.2353f, 0.2471f, 0.3686f}.data;
+
+        rng_seed[0] = _mm_set_epi64x(123456789, 987654321);
+        rng_seed[1] = _mm_set_epi64x(1122334455, 5566778899);
     }
 
     /// @brief Renders the complete image using the given settings

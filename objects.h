@@ -2,6 +2,8 @@
 #include <iostream>
 #include <cstring>
 
+#include <immintrin.h>
+
 using namespace std;
 using namespace m128Calc;
 
@@ -134,8 +136,8 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
         {
             return NO_COLLISION;
         }
-
-        __m128 point = _mm_add_ps(ray.origin, _mm_mul_ps(ray.direction, _mm_set_ps1(dist)));
+        __m128 distv = _mm_set_ps1(dist);
+        __m128 point = _mm_fmadd_ps(ray.direction, distv, ray.origin);
         __m128 normal = normalized(_mm_sub_ps(point, position));
 
         return {true, point, normal, ray.direction, dist};
@@ -158,7 +160,7 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
             return NO_COLLISION;
         }
         __m128 distv = _mm_set_ps1(dist);
-        __m128 point = _mm_add_ps(_mm_mul_ps(ray.direction, distv), ray.origin);
+        __m128 point = _mm_fmadd_ps(ray.direction, distv, ray.origin);
         __m128 diff = _mm_sub_ps(point, position);
 
         float x_dist = sqrt(norm2(cross(diff, localY)));

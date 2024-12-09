@@ -435,20 +435,22 @@ public:
         float step_width = 1.0f / steps;
         float fx = static_cast<float>(x);
         float fy = static_cast<float>(y);
-        // innerhalb jedes Pixels mehrere Unterpixel simulieren
+
         for (int i = 0; i < steps; i++)
         {
+            float subpixel_offset_x = fx + (i + 0.5f) * step_width;
             for (int j = 0; j < steps; j++)
             {
-                // jedes Subpixel durch kleine Verschiebungen berechnet --> gleichmäßig verteilte Subpixel-Koordinaten
-                float subpixel_x = fx + (i + 0.5f) * step_width;
-                float subpixel_y = fy + (j + 0.5f) * step_width;
-                final_color = _mm_add_ps(final_color, cam->FullTrace(cam->GenerateRayFromPixel(subpixel_x, subpixel_y), 3, 5, 2, cam->sceneMemory)); // Strahl für jeden Subpixel erzeugt
+                float subpixel_offset_y = fy + (j + 0.5f) * step_width;
+
+                LightRay subpixel_ray = cam->GenerateRayFromPixel(subpixel_offset_x, subpixel_offset_y);
+                __m128 subpixel_color = cam->FullTrace(subpixel_ray, 3, 3, 1, cam->sceneMemory);
+
+                final_color = _mm_add_ps(final_color, subpixel_color);
             }
         }
-        // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet
-        // berechnet Durchschnitt der Subpixelfarben um endgültige Pixelfarbe zu bestimmen
-        __m128 div = _mm_set1_ps(steps * steps);
-        return _mm_div_ps(final_color, div);
+
+        __m128 div = _mm_set1_ps(1.0f / (steps * steps));
+        return _mm_mul_ps(final_color, div);
     }
 };

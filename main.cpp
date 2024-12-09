@@ -44,6 +44,7 @@ int main()
     testscene.objects.push_back(&ball_B);
 
     RenderSettings rendersettings = RenderSettings("./Documentation/rendersettings.xml");
+    // omp_set_num_threads(1);
     Camera testcam = Camera({0, 0, -8}, {0, 0, 0}, 45, rendersettings, testscene);
 
     testcam.RenderImage(Camera::kernel_full);

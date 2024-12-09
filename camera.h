@@ -4,6 +4,8 @@
 #include <sstream>
 #include <functional>
 
+#include <smmintrin.h>
+
 using namespace std;
 using namespace m128Calc;
 
@@ -14,7 +16,7 @@ class Camera
 
 private:
     /// @brief Seed for randomness
-    __m128i rng_seed[2];
+    unsigned int rng_seed = 42;
 
     /// @brief Generates the full recursion for a single ray
     /// @param scene active scene
@@ -67,7 +69,7 @@ private:
             for (int s = 0; s < scatters; s++)
             {
                 __m128 reflected = normalized(
-                    scatter(mirrorToNormalized(closestCollision.incoming_direction, closestCollision.normal), diffuse, rng_seed)); // normalisierte Spiegelung, hinzufügen zufällige Streuung
+                    scatter(mirrorToNormalized(closestCollision.incoming_direction, closestCollision.normal), diffuse, &rng_seed)); // normalisierte Spiegelung, hinzufügen zufällige Streuung
                 __m128 hit_color = _mm_add_ps(
                     _mm_mul_ps(objCol, intvr),
                     _mm_mul_ps(
@@ -124,9 +126,6 @@ public:
         skybox_colors[3] = Vec3{0.9331f, 0.8118f, 0.3922f}.data;
         skybox_colors[4] = Vec3{0.8039f, 0.8667f, 0.9294f}.data;
         skybox_colors[5] = Vec3{0.2353f, 0.2471f, 0.3686f}.data;
-
-        rng_seed[0] = _mm_set_epi64x(123456789, 987654321);
-        rng_seed[1] = _mm_set_epi64x(1122334455, 5566778899);
     }
 
     /// @brief Renders the complete image using the given settings
@@ -279,9 +278,7 @@ public:
         __m128 psy = _mm_set_ps1(pixelScreen_Y);
 
         // Calculate the direction of the ray
-        __m128 right_scaled = _mm_mul_ps(right, psx);
-        __m128 up_scaled = _mm_mul_ps(up, psy);
-        __m128 pixelWorld = _mm_add_ps(_mm_add_ps(forward, right_scaled), up_scaled);
+        __m128 pixelWorld = _mm_fmadd_ps(right, psx, _mm_fmadd_ps(up, psy, forward));
         __m128 direction = normalized(pixelWorld);
 
         // Return the generated ray

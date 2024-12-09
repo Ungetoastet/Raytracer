@@ -120,26 +120,32 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
     {
         __m128 center_origin_diff = _mm_sub_ps(ray.origin, position);
 
-        float b = dot(ray.direction, center_origin_diff);
-        float scaleX = getX(scale);
-        float c = norm2(center_origin_diff) - scaleX * scaleX;
-        float delta = b * b - c;
+        __m128 b_vec = _mm_dp_ps(ray.direction, center_origin_diff, 0xF1);
+        __m128 norm2_vec = _mm_set1_ps(norm2(center_origin_diff));
 
+        float b = _mm_cvtss_f32(b_vec);
+
+        float scaleX = getX(scale);
+
+        float c = _mm_cvtss_f32(norm2_vec) - scaleX * scaleX;
+
+        float delta = b * b - c;
         if (delta < 0)
         {
             return NO_COLLISION;
         }
 
         float dist = -b - sqrtf(delta);
-
         if (dist <= 0.01)
         {
             return NO_COLLISION;
         }
+
         __m128 distv = _mm_set_ps1(dist);
         __m128 point = _mm_fmadd_ps(ray.direction, distv, ray.origin);
         __m128 normal = normalized(_mm_sub_ps(point, position));
 
+        // Return collision data
         return {true, point, normal, ray.direction, dist};
     }
     else // Plane Collision
@@ -163,14 +169,14 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
         __m128 point = _mm_fmadd_ps(ray.direction, distv, ray.origin);
         __m128 diff = _mm_sub_ps(point, position);
 
-        float x_dist = sqrt(norm2(cross(diff, localY)));
-        if (abs(x_dist) > getX(scale))
+        float y_dist = sqrt(norm2(cross(diff, localX)));
+        if (abs(y_dist) > getY(scale))
         {
             return NO_COLLISION;
         }
 
-        float y_dist = sqrt(norm2(cross(diff, localX)));
-        if (abs(y_dist) > getY(scale))
+        float x_dist = sqrt(norm2(cross(diff, localY)));
+        if (abs(x_dist) > getX(scale))
         {
             return NO_COLLISION;
         }

@@ -10,19 +10,27 @@
 #include <xmmintrin.h> // Vector instrinsics
 #include <pmmintrin.h> // SSE3
 
-#include <cmath>
-
-/// @brief Gives a random float in range 0 to 1
-float random1(unsigned int *seed)
+/// @brief Gives a random float vector in range -1 to 1
+inline __m128 random3(unsigned int *seed)
 {
-    *seed = (1140671485 * (*seed) + 12820163) % (1 << 24);
-    return ((float)(*seed)) / (1 << 24);
-}
+    unsigned int s0 = *seed;
+    unsigned int s1 = (1140671485 * (s0 + 1) + 12820163) % (1 << 24);
+    unsigned int s2 = (1140671485 * (s1 + 1) + 12820163) % (1 << 24);
+    unsigned int s3 = (1140671485 * (s2 + 1) + 12820163) % (1 << 24);
 
-/// @brief Gives a random float in range -1 to 1
-inline float random2(unsigned int *seed)
-{
-    return random1(seed) * 2 - 1.0;
+    *seed = s3;
+
+    __m128 result = _mm_set_ps(
+        (float)(s3),
+        (float)(s2),
+        (float)(s1),
+        (float)(s0));
+
+    result = _mm_mul_ps(result, _mm_set1_ps(1.0f / (1 << 24)));
+
+    result = _mm_sub_ps(_mm_mul_ps(result, _mm_set1_ps(2.0f)), _mm_set1_ps(1.0f));
+
+    return result;
 }
 
 // Do not use in render kernel

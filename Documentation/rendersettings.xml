@@ -1,12 +1,19 @@
 <rendersettings>
     <!-- 4k -->
     <!-- <resolution x="3840" y="2160" /> -->
+
     <!-- 1080p -->
     <!-- <resolution x="1920" y="1080" /> -->
+
     <!-- 720 -->
     <resolution x="1280" y="720" />
+
     <!-- 480p -->
     <!-- <resolution x="850" y="480" /> -->
+
+    <!-- Testing only -->
+    <!-- <resolution x="200" y="100" /> -->
+
     <outputpath path="render.ppm" />
     <depth b="8" />
     <supersampling steps="3" />

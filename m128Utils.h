@@ -1,5 +1,6 @@
 #include <xmmintrin.h> // Vector instrinsics
 #include <pmmintrin.h> // SSE3
+#include <immintrin.h>
 
 #include <string>
 #include <cmath>
@@ -18,10 +19,8 @@ namespace m128Calc
     }
     inline float dot(__m128 a, __m128 b)
     {
-        __m128 temp = _mm_mul_ps(a, b);
-        temp = _mm_hadd_ps(temp, temp);
-        temp = _mm_hadd_ps(temp, temp);
-        return _mm_cvtss_f32(temp);
+        __m128 result = _mm_dp_ps(a, b, 0xF1); // Mask 0xF1 = sum all elements
+        return _mm_cvtss_f32(result);
     }
     __m128 cross(__m128 a, __m128 b)
     {
@@ -39,10 +38,7 @@ namespace m128Calc
     }
     inline float norm2(__m128 v)
     {
-        __m128 mult = _mm_mul_ps(v, v);
-        __m128 sum = _mm_add_ps(mult, _mm_shuffle_ps(mult, mult, _MM_SHUFFLE(0, 3, 2, 1)));
-        sum = _mm_add_ps(sum, _mm_shuffle_ps(sum, sum, _MM_SHUFFLE(0, 0, 0, 2)));
-        return _mm_cvtss_f32(sum);
+        return dot(v, v);
     }
     __m128 normalized(__m128 v)
     {
@@ -74,31 +70,11 @@ namespace m128Calc
     }
     /// @brief Randomly shift the vector by a tiny amount
     /// @param strength How far the changed vector is from the original
-    inline __m128 scatter(__m128 v, float strength, __m128i *state)
+    inline __m128 scatter(__m128 v, float strength, unsigned int *seed)
     {
-        // Vectorized xoroshiro128+ implementation
-        __m128i s0 = state[0];
-        __m128i s1 = state[1];
-
-        // Compute xoroshiro128+ output
-        __m128i result = _mm_add_epi64(s0, s1);
-
-        // Perform the xor and shift operations
-        __m128i s1_xor_s0 = _mm_xor_si128(s1, s0);
-        s0 = _mm_xor_si128(_mm_slli_epi64(s0, 55), _mm_srli_epi64(s0, 9)); // Rotate s0 left by 55
-        s1 = _mm_xor_si128(_mm_slli_epi64(s1_xor_s0, 36), s1_xor_s0);      // Rotate s1 left by 36
-
-        // Update state
-        state[0] = s0;
-        state[1] = s1;
-
-        // Convert result to floating-point in the range [0, 1)
-        const __m128 scale = _mm_set1_ps(1.0f / (1LL << 53)); // Scale factor for normalization
-        __m128 random = _mm_mul_ps(_mm_cvtepi32_ps(_mm_and_si128(result, _mm_set1_epi64x(0x7FFFFFFFFFFFFF))), scale);
-
-        // Apply scattering
+        __m128 scatter = random3(seed);
         __m128 strengthv = _mm_set1_ps(strength);
-        return _mm_add_ps(v, _mm_mul_ps(random, strengthv));
+        return _mm_fmadd_ps(scatter, strengthv, v);
     }
 
     __m128 radToEuler(__m128 v)

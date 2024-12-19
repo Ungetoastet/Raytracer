@@ -40,20 +40,30 @@ namespace m128Calc
     {
         return dot(v, v);
     }
+#include <immintrin.h> // For SIMD intrinsics
+
     __m128 normalized(__m128 v)
     {
         float y = norm2(v);
-        float x2 = y * 0.5;
-        long i;
-        const float threehalves = 1.5;
+        float x2 = y * 0.5f;
+        const float threehalves = 1.5f;
 
-        i = *(long *)&y;                      // For bit manipulation
-        i = 0x5f3759df - (i >> 1);            // Magic
-        y = *(float *)&i;                     // Back to float for calculating
+        // Use a union for type-punning safely
+        union
+        {
+            float f;
+            int32_t i;
+        } floatIntUnion;
+
+        floatIntUnion.f = y;
+        floatIntUnion.i = 0x5f3759df - (floatIntUnion.i >> 1); // Magic bit manipulation
+        y = floatIntUnion.f;
+
         y = y * (threehalves - (x2 * y * y)); // Newton iteration
         __m128 yv = _mm_set1_ps(y);
         return _mm_mul_ps(v, yv);
     }
+
     std::string toString(__m128 v)
     {
         return std::to_string(getX(v)) + ", " + std::to_string(getY(v)) + ", " + std::to_string(getZ(v));
@@ -87,4 +97,9 @@ namespace m128Calc
         __m128 mult = _mm_set1_ps(M_PI / 180.0f);
         return _mm_mul_ps(mult, v);
     }
+    // __m128 sampleHemiSphere(__m128 normalDir, int *rngSeed)
+    // {
+    //     __m128 half = _mm_set1_ps(0.5f);
+    //     __m128 halfNormalDir = _mm_mul_ps(normalDir, half);
+    // }
 }

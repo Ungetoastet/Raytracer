@@ -30,7 +30,7 @@ float *bake_into_memory(std::vector<Object *> &objectsInScene)
 {
     size_t objectCount = objectsInScene.size();
     float *memory_start = (float *)allocate_aligned(16, 112 * objectCount); // void* arithmetic causes warnings, use float* instead
-    for (int i = 0; i < objectCount; i++)
+    for (size_t i = 0; i < objectCount; i++)
     {
         float *object_memory_start = memory_start + 28 * i;
 

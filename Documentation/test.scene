@@ -20,14 +20,6 @@
         <Plane size="20" position="0,0,-10" rotation="0,0,0" material="matteGray" />
     </objects>
 
-    <lights>
-        <!-- Punktlichtquelle nahe der Kugel -->
-        <PointLight intensity="0.8" color="1,1,1" position="5,10,5" />
-
-        <!-- Sonnenlicht, um eine gleichmäßige Beleuchtung zu erzeugen -->
-        <DirectionalLight intensity="0.5" color="1,1,1" direction="-1,-1,-1" />
-    </lights>
-
     <camera>
         <!-- Kamera mit Blick auf den Ursprung -->
         <position x="10" y="10" z="20" />

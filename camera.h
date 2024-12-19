@@ -32,7 +32,7 @@ private:
         float closestDistance = 9999;
         float *closest_obj_ptr = 0;
 
-        for (int i = 0; i < activeScene.objects.size(); i++)
+        for (size_t i = 0; i < activeScene.objects.size(); i++)
         {
             float *objOffset = sceneMem + (28 * i);
             Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
@@ -59,21 +59,28 @@ private:
             // Scatter and bounce
             __m128 objCol = _mm_load_ps(closest_obj_ptr + 20);
 
-            if (diffuse < 0 || bounces == 0 || scatters <= 0)
+            if (diffuse < 0)
             {
                 // For emissive materials, Rückgabe Emissionsfarbe
                 return objCol;
             }
             // wenn Material diffus & nicht emissiv
             __m128 resColor = _mm_setzero_ps();
+            if (bounces == 0 || scatters <= 0)
+            {
+                return resColor;
+            }
             for (int s = 0; s < scatters; s++)
             {
-                __m128 reflected = normalized(
+                __m128 specular_reflected = normalized(
                     scatter(mirrorToNormalized(closestCollision.incoming_direction, closestCollision.normal), diffuse, &rng_seed)); // normalisierte Spiegelung, hinzufügen zufällige Streuung
-                __m128 hit_color = _mm_add_ps(
+
+                // __m128 diffuse_reflected = ???;
+
+                            __m128 hit_color = _mm_add_ps(
                     _mm_mul_ps(objCol, intvr),
                     _mm_mul_ps(
-                        FullTrace(LightRay(closestCollision.point, reflected), bounces - 1, scatters - scatterreduction, scatterreduction, sceneMem),
+                        FullTrace(LightRay(closestCollision.point, specular_reflected), bounces - 1, scatters - scatterreduction, scatterreduction, sceneMem),
                         intv)); // Rekursion mit kleinerer bounces- und scatter-Anzahl
                 resColor = _mm_add_ps(resColor, hit_color);
             }
@@ -221,6 +228,7 @@ public:
         std::cout << "\nRendering done in " << (omp_get_wtime() - starttime) << std::endl;
 
         free_aligned(sceneMemory);
+        free_aligned(skybox_colors);
 
         starttime = omp_get_wtime();
 
@@ -337,16 +345,14 @@ public:
 
         Collision closestCollision = NO_COLLISION;
         float closestDistance = 9999;
-        float *closest_obj_ptr = 0;
 
-        for (int i = 0; i < cam->activeScene.objects.size(); i++)
+        for (size_t i = 0; i < cam->activeScene.objects.size(); i++)
         {
             float *objOffset = cam->sceneMemory + (28 * i);
             Collision c = MemoryCollision(lr, objOffset); // Kollision prüfen
             if (c.valid && c.distance < closestDistance)  // wenn Kollision gültig und Objekt näher ist als Vorherige
             {
                 closestDistance = c.distance;
-                closest_obj_ptr = objOffset;
                 closestCollision = c;
             }
             else

@@ -79,11 +79,18 @@ private:
 
                 // __m128 diffuse_reflected = ???;
 
+                // Calculate the distance from the light source to the collision point
+                float d = closestCollision.distance;
+
+                // Apply light attenuation using the inverse square law
+                float attenuation = 1.0f / (1 + 0.0065 * d * d);
+                __m128 attenuated_intv = _mm_mul_ps(intv, _mm_set_ps1(attenuation));
+
                 __m128 hit_color = _mm_add_ps(
                     _mm_mul_ps(objCol, intvr),
                     _mm_mul_ps(
                         FullTrace(LightRay(closestCollision.point, specular_reflected), bounces - 1, scatters - scatterreduction, scatterreduction, sceneMem),
-                        intv)); // Rekursion mit kleinerer bounces- und scatter-Anzahl
+                        attenuated_intv)); // Rekursion mit kleinerer bounces- und scatter-Anzahl
                 resColor = _mm_add_ps(resColor, hit_color);
             }
 

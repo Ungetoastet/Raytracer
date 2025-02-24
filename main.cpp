@@ -40,11 +40,26 @@ void Scene::ParseCamera(std::map<std::string, std::string> camParams)
     this->cam = new Camera(position, lookAt, fov, this->rs, *this);
 }
 
+void Scene::cleanup()
+{
+    for (Object *obj : objects)
+    {
+        delete obj;
+    }
+    objects.clear();
+
+    delete cam;
+    cam = nullptr;
+
+    materials.clear();
+}
+
 int main()
 {
     RenderSettings rendersettings = RenderSettings("./Documentation/rendersettings.xml");
     Scene testscene = Scene("./Documentation/test.scene", rendersettings);
 
     testscene.cam->RenderImage(Camera::kernel_full);
+    testscene.cleanup();
     return 0;
 }

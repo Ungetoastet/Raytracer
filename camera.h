@@ -149,82 +149,33 @@ public:
         sceneMemory = bake_into_memory(activeScene.objects);
         std::cout << "Baking scene done in " << omp_get_wtime() - starttime << std::endl;
 
-        vector<std::string> rows(renderSettings.resolution[1]);    // Speicher für Zeilen des Bildes
-        vector<float> load_rows(renderSettings.resolution[1] / 5); // Speicher für Berechnungslast jeder Zeile
+        vector<std::string> rows(renderSettings.resolution[1]); // Speicher für Zeilen des Bildes
 
-        starttime = omp_get_wtime();
-
-        // Compute load for each row
-#pragma omp parallel for
-        for (int y = 0; y < renderSettings.resolution[1] / 5; y++)
-        {
-            int row_start = omp_get_wtime();
-            for (int x = 0; x < renderSettings.resolution[0] / 5; x++)
-            {
-                kernel(this, x * 5, y * 5);
-            }
-            load_rows[y] = omp_get_wtime() - row_start;
-        }
-
-        auto [row_numbers, sorted_loads] = sortWithIndex(load_rows); // Zeilen nach berechneter Last sortieren
-
-        // Distribute load
-        vector<vector<int>> thread_row_table = vector<vector<int>>(omp_get_max_threads()); // gibt an welche Zeilen von welchem Thread bearbeitet werden
-        vector<float> thread_loads = vector<float>(omp_get_max_threads());
-
-        // Give biggest load to least loaded thread
-        for (size_t i = 0; i < row_numbers.size(); i++)
-        {
-            float smallestload = thread_loads[0];
-            size_t leastLoadedThread = 0;
-            for (size_t tnum = 1; tnum < thread_loads.size(); tnum++)
-            {
-                if (thread_loads[tnum] < smallestload)
-                {
-                    smallestload = thread_loads[tnum];
-                    leastLoadedThread = tnum;
-                }
-            }
-            thread_row_table[leastLoadedThread].push_back(row_numbers[i]);
-            thread_loads[leastLoadedThread] += sorted_loads[i];
-        }
-
-        std::cout << "Load balancing done in " << (omp_get_wtime() - starttime) << std::endl;
         starttime = omp_get_wtime();
 
         // Compute color for each pixel
-        // Zeilen in thread_row_table werden parallelisiert
-        // jeder Thread rendert die ihm zugewiesenen Zeitbündel (je 5 Zeilen)
-        int rows_done = 0;
-#pragma omp parallel
+        // Zeilen in werden parallelisiert
+#pragma omp parallel for
+        for (int y = 0; y < renderSettings.resolution[1]; y++)
         {
-            for (int rowbundle : thread_row_table[omp_get_thread_num()])
+            std::string buffer;
+            buffer.reserve(renderSettings.resolution[0] * 12); // Preallocate space
+
+            std::ostringstream row;
+            row << std::move(buffer);
+
+            for (int x = 0; x < renderSettings.resolution[0]; x++)
             {
-                size_t startrow = rowbundle * 5;
-                for (size_t y = startrow; y < startrow + 5; y++)
-                {
-                    std::string row;
-                    row.reserve(renderSettings.resolution[0] * 3 * 4);
-                    for (int x = 0; x < renderSettings.resolution[0]; x++)
-                    {
-                        __m128 kernel_res = kernel(this, x, y);
-                        __m128 color = _mm_mul_ps(kernel_res, calculatedChannelDepth);
-                        float components[4];
-                        _mm_storeu_ps(components, color);
-                        int r = std::min(255, std::max(0, static_cast<int>(components[0])));
-                        int g = std::min(255, std::max(0, static_cast<int>(components[1])));
-                        int b = std::min(255, std::max(0, static_cast<int>(components[2])));
-                        row.append(std::to_string(r)).append(" ").append(std::to_string(g)).append(" ").append(std::to_string(b)).append(" ");
-                    }
-                    rows[y] = row;
-                }
-// hier wird Gesamtzahl der gerenderten Zeilen (rows_done) aktualisiert und ein Fortschrittsbalken in Konsole angezeigt
-#pragma omp critical
-                {
-                    rows_done += 5;
-                    std::cout << "\r[" << get_progress_bar((float)rows_done / renderSettings.resolution[1]) << "]" << std::flush;
-                }
+                __m128 kernel_res = kernel(this, x, y);
+                __m128 color = _mm_mul_ps(kernel_res, calculatedChannelDepth);
+                float components[4];
+                _mm_storeu_ps(components, color);
+                int r = std::min(255, std::max(0, static_cast<int>(components[0])));
+                int g = std::min(255, std::max(0, static_cast<int>(components[1])));
+                int b = std::min(255, std::max(0, static_cast<int>(components[2])));
+                row << r << " " << g << " " << b << " ";
             }
+            rows[y] = row.str();
         }
 
         std::cout << "\nRendering done in " << (omp_get_wtime() - starttime) << std::endl;

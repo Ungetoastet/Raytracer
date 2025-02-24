@@ -219,4 +219,5 @@ public:
         parseFromFile(path_to_file);
     }
     Scene() {};
+    void cleanup();
 };

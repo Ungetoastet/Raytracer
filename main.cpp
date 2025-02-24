@@ -57,7 +57,8 @@ void Scene::cleanup()
 int main()
 {
     RenderSettings rendersettings = RenderSettings("./Documentation/rendersettings.xml");
-    Scene testscene = Scene("./Documentation/test.scene", rendersettings);
+    // Scene testscene = Scene("./Documentation/test.scene", rendersettings);
+    Scene testscene = Scene("./test.scene", rendersettings);
 
     testscene.cam->RenderImage(Camera::kernel_full);
     testscene.cleanup();

@@ -20,4 +20,4 @@ Instead of the Vec3 struct, create a namespace with static Vector Methods that o
 
 | Run 1 | Run 2 | Run 3 |
 | ----- | ----- | ----- |
-| 6.34s | 6.49s | 6.38s |
+| 5.91s | 5.85s | 5.94s |

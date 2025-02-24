@@ -9,6 +9,8 @@
 using namespace std;
 using namespace m128Calc;
 
+class Scene;
+
 class Camera
 {
     // Determines the color value for each pixel
@@ -77,7 +79,7 @@ private:
 
                 // __m128 diffuse_reflected = ???;
 
-                            __m128 hit_color = _mm_add_ps(
+                __m128 hit_color = _mm_add_ps(
                     _mm_mul_ps(objCol, intvr),
                     _mm_mul_ps(
                         FullTrace(LightRay(closestCollision.point, specular_reflected), bounces - 1, scatters - scatterreduction, scatterreduction, sceneMem),

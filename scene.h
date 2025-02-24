@@ -1,6 +1,28 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <sstream>
+
+class Camera;
+
+Vec3 parseVec3(const std::string &input)
+{
+    std::stringstream ss(input);
+    std::vector<float> values;
+    std::string token;
+
+    while (std::getline(ss, token, ','))
+    {
+        values.push_back(std::stof(token));
+    }
+
+    if (values.size() != 3)
+    {
+        std::cerr << "SCENE ERROR: Invalid Vec3 format" << std::endl;
+    }
+
+    return Vec3(values[0], values[1], values[2]);
+}
 
 class Scene
 {
@@ -16,148 +38,184 @@ private:
         {
             std::cerr << "SCENE ERROR: ROOT NODE MUST BE SCENE";
         }
+        for (std::string scene : scene_root.children)
+        {
+            XML_Node current_scene = parse_xml_bracket(scene);
+            if (current_scene.tag_name == "objects")
+            {
+                ParseObjects(current_scene.children);
+            }
+            else if (current_scene.tag_name == "camera")
+            {
+                ParseCamera(current_scene.parameters);
+            }
+            else if (current_scene.tag_name == "materials")
+            {
+                ParseMaterials(current_scene.children);
+            }
+            else
+            {
+                std::cerr << "SCENE ERROR: UNKNOWN TAG " << current_scene.tag_name << std::endl;
+            }
+        }
     }
-    //     for (std::string scene : scene_root.children)
-    //     {
-    //         XML_Node current_scene = parse_xml_bracket(scene);
-    //         if (current_scene.tag_name == "objects")
-    //         {
-    //             ParseObjects(current_scene.children);
-    //         }
-    //         else if (current_scene.tag_name == "lights")
-    //         {
-    //             ParseLights(current_scene.children);
-    //         }
-    //         else if (current_scene.tag_name == "camera")
-    //         {
-    //             ParseCamera(current_scene.children);
-    //         }
-    //         else if (current_scene.tag_name == "materials")
-    //         {
-    //             ParseMaterials(current_scene.children);
-    //         }
-    //         else
-    //         {
-    //             std::cerr << "SCENE ERROR: UNKNOWN SCENE" << current_scene.tag_name << std::endl;
-    //         }
-    //     }
-    // }
 
-    // void ParseObjects(std::vector<string> objectStrings)
-    // {
-    //     for (std::string object : objectStrings)
-    //     {
-    //         XML_Node current_object = parse_xml_bracket(object);
-    //         if (current_object.tag_name == "Sphere")
-    //         {
-    //             CreateSphere(current_object.parameters);
-    //         }
-    //         else if (current_object.tag_name == "Cube")
-    //         {
-    //             CreateCube(current_object.parameters);
-    //         }
-    //         else if (current_object.tag_name == "Plane")
-    //         {
-    //             CreatePlane(current_object.parameters);
-    //         }
-    //         else
-    //         {
-    //             std::cerr << "SCENE ERROR: UNKNOWN OBJECT" << current_object.tag_name << std::endl;
-    //         }
-    //     }
-    // }
+    void ParseObjects(std::vector<string> objectStrings)
+    {
+        for (std::string object : objectStrings)
+        {
+            XML_Node current_object = parse_xml_bracket(object);
+            if (current_object.tag_name == "Sphere")
+            {
+                CreateSphere(current_object.parameters);
+            }
+            else if (current_object.tag_name == "Plane")
+            {
+                CreatePlane(current_object.parameters);
+            }
+            else
+            {
+                std::cerr << "SCENE ERROR: UNKNOWN OBJECT TYPE " << current_object.tag_name << std::endl;
+            }
+        }
+    }
 
-    // void ParseLights(std::vector<string> lightStrings)
-    // {
-    //     for (std::string light : lightStrings)
-    //     {
-    //         XML_Node current_light = parse_xml_bracket(light);
-    //         if (current_light.tag_name == "PointLight")
-    //         {
-    //             CreatePointLight(current_light.parameters);
-    //         }
-    //         else if (current_light.tag_name == "DirectionalLight")
-    //         {
-    //             CreateDirectionalLight(current_light.parameters);
-    //         }
-    //         else
-    //         {
-    //             std::cerr << "SCENE ERROR: UNKNOWN LIGHT" << current_light.tag_name << std::endl;
-    //         }
-    //     }
-    // }
+    void ParseCamera(std::map<std::string, std::string> sphereParams);
 
-    // void ParseCamera(std::vector<string> cameraStrings)
-    // {
-    //     for (std::string camera : cameraStrings)
-    //     {
-    //         XML_Node current_camera = parse_xml_bracket(camera);
-    //         if (current_camera.tag_name == "position")
-    //         {
-    //             CreatePosition(current_position.parameters);
-    //         }
-    //         else if (current_camera.tag_name == "lookAt")
-    //         {
-    //             CreateLookAt(current_lookAt.parameters);
-    //         }
-    //         else if (current_camera.tag_name == "fieldOfView")
-    //         {
-    //             CreateFieldOfView(current_fieldOfView.parameters);
-    //         }
-    //         else
-    //         {
-    //             std::cerr << "SCENE ERROR: UNKNOWN CAMERA" << current_camera.tag_name << std::endl;
-    //         }
-    //     }
-    // }
+    void ParseMaterials(std::vector<string> materialsStrings)
+    {
+        for (std::string material : materialsStrings)
+        {
+            XML_Node current_material = parse_xml_bracket(material);
+            if (current_material.tag_name != "material")
+            {
+                std::cerr << "SCENE ERROR: UNKNOWN MATERIAL TAG " << current_material.tag_name << std::endl;
+            }
+            string id = "";
+            Vec3 color;
+            float reflectiveness = 0;
+            float roughness = 0;
 
-    // void ParseMaterials(std::vector<string> materialsStrings)
-    // {
-    //     for (std::string material : materialsStrings)
-    //     {
-    //         XML_Node current_materials = parse_xml_bracket(material);
-    //         if (current_materials.tag_name == "material")
-    //         {
-    //             CreateMaterialS(current_materials.parameters, current_materials.children);
-    //         }
-    //         else
-    //         {
-    //             std::cerr << "SCENE ERROR: UNKNOWN MATERIAL" << current_materials.tag_name << std::endl;
-    //         }
-    //     }
-    // }
+            for (const auto &[key, value] : current_material.parameters)
+            {
+                if (key == "id")
+                {
+                    id = value;
+                }
+                else if (key == "color")
+                {
+                    color = parseVec3(value);
+                }
+                else if (key == "reflection")
+                {
+                    reflectiveness = std::stof(value);
+                }
+                else if (key == "roughness")
+                {
+                    roughness = std::stof(value);
+                }
+                else
+                {
+                    std::cerr << "SCENE ERROR: UNKNOWN MATERIAL PARAMETER " << key << std::endl;
+                }
+            }
+            this->materials.push_back(Material(id, color, reflectiveness, roughness));
+        }
+    }
 
-    // void CreateSphere(std::map<std::string, std::string> sphereParams)
-    // {
-    //     // Variablen erstellen
-    //     for (const auto &[key, value] : sphereParams)
-    //     {
-    //         if (key == "position")
-    //         {
-    //             // Position speichern in variable;
-    //             // String zu vektor methode aufrufen (musst du noch schreiben (lassen))
-    //         }
-    //         else
-    //         {
-    //             std::cerr << "RENDERSETTINGS ERROR: UNKNOWN OUTPUTPATH PARAMETER" << std::endl;
-    //         }
-    //     }
-    //     // Hier checken, ob alle variablen belegt wurden
-    //     if ()
-    //     {
-    //         std::cerr << "RENDERSETTINGS ERROR: MISSING OUTPUTPATH PARAMETER" << std::endl;
-    //     }
-    //     // Variablen an constructor übergeben
-    //     Sphere sphere;
-    // }
+    void CreateSphere(std::map<std::string, std::string> sphereParams)
+    {
+        Vec3 position;
+        float radius = 1;
+        string materialID;
+
+        for (const auto &[key, value] : sphereParams)
+        {
+            if (key == "position")
+            {
+                position = parseVec3(value);
+            }
+            else if (key == "radius")
+            {
+                radius = std::stof(value);
+            }
+            else if (key == "material")
+            {
+                materialID = value;
+            }
+            else
+            {
+                std::cerr << "SCENE ERROR: UNKNOWN SPHERE PARAMETER" << std::endl;
+            }
+        }
+        Material material = getMaterial(materialID);
+        this->objects.push_back(new Sphere(position, radius, material));
+    }
+
+    void CreatePlane(std::map<std::string, std::string> planeParams)
+    {
+        Vec3 position;
+        Vec3 rotation;
+        Vec3 scale;
+        string materialID;
+
+        for (const auto &[key, value] : planeParams)
+        {
+            if (key == "position")
+            {
+                position = parseVec3(value);
+            }
+            else if (key == "rotation")
+            {
+                rotation = parseVec3(value);
+                rotation = rotation.eulerToRad();
+            }
+            else if (key == "scale")
+            {
+                scale = parseVec3(value);
+            }
+            else if (key == "size")
+            {
+                float s = std::stof(value);
+                scale = Vec3(s, s, s);
+            }
+            else if (key == "material")
+            {
+                materialID = value;
+            }
+            else
+            {
+                std::cerr << "SCENE ERROR: UNKNOWN PLANE PARAMETER" << std::endl;
+            }
+        }
+        Material material = getMaterial(materialID);
+        this->objects.push_back(new Plane(position, rotation, scale, material));
+    }
+
+    Material getMaterial(string id)
+    {
+        for (Material m : this->materials)
+        {
+            if (id == m.id)
+            {
+                return m;
+            }
+        }
+        std::cerr << "SCENE ERROR: COULD NOT FIND MATERIAL ID " << id << ". Hint: Materials need to be defined before Objects." << std::endl;
+        return Material("MISSING", Vec3(0, 0, 0), 0, 0);
+    }
 
 public:
     std::vector<Object *> objects;
+    std::vector<Material> materials;
+    Camera *cam;
+    RenderSettings rs;
 
     /// @brief Generates a scene object based on the .scene xml file
     /// @param path_to_file
-    Scene(std::string path_to_file)
+    Scene(std::string path_to_file, RenderSettings rs)
     {
+        this->rs = rs;
         parseFromFile(path_to_file);
     }
     Scene() {};

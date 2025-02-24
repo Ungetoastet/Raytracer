@@ -17,3 +17,7 @@ Small improvements, but the conversion between Vec3 struct and \_m128 data type 
 # Elimination of Vec3 struct
 
 Instead of the Vec3 struct, create a namespace with static Vector Methods that only uses \_m128 data types.
+
+| Run 1 | Run 2 | Run 3 |
+| ----- | ----- | ----- |
+| 6.34s | 6.49s | 6.38s |

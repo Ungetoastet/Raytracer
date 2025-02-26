@@ -125,7 +125,7 @@ public:
     /// @param position World position of the camera
     /// @param lookAt World position thats in the center of the rendered image
     /// @param fieldOfView Vertical FOV of the Camera in Degrees
-    Camera(const Vec3 &position, const Vec3 &lookAt, float fieldOfView, const RenderSettings &rs, const Scene &activeScene)
+    Camera(const Vec3 &position, const Vec3 &lookAt, float fieldOfView, const RenderSettings &rs, const Scene &activeScene, bool skybox)
     {
         this->position = position.data;
         this->lookAt = lookAt.data;
@@ -135,13 +135,23 @@ public:
         renderSettings = rs;
 
         // Skybox
-        skybox_colors = (__m128 *)allocate_aligned(16, 6 * 16);
-        skybox_colors[0] = Vec3{0.0f, 0.02f, 0.08f}.data;
-        skybox_colors[1] = Vec3{0.3f, 0.2f, 0.5f}.data;
-        skybox_colors[2] = Vec3{0.8314f, 0.8118f, 0.7922f}.data;
-        skybox_colors[3] = Vec3{0.9331f, 0.8118f, 0.3922f}.data;
-        skybox_colors[4] = Vec3{0.8039f, 0.8667f, 0.9294f}.data;
-        skybox_colors[5] = Vec3{0.2353f, 0.2471f, 0.3686f}.data;
+        if (skybox)
+        {
+            skybox_colors = (__m128 *)allocate_aligned(16, 6 * 16);
+            skybox_colors[0] = Vec3{0.0f, 0.02f, 0.08f}.data;
+            skybox_colors[1] = Vec3{0.3f, 0.2f, 0.5f}.data;
+            skybox_colors[2] = Vec3{0.8314f, 0.8118f, 0.7922f}.data;
+            skybox_colors[3] = Vec3{0.9331f, 0.8118f, 0.3922f}.data;
+            skybox_colors[4] = Vec3{0.8039f, 0.8667f, 0.9294f}.data;
+            skybox_colors[5] = Vec3{0.2353f, 0.2471f, 0.3686f}.data;
+        }
+        else
+        {
+            skybox_marks = {0.0f, 1.1f};
+            skybox_colors = (__m128 *)allocate_aligned(16, 2 * 16);
+            skybox_colors[0] = Vec3{0.0f, 0.0f, 0.0f}.data;
+            skybox_colors[1] = Vec3{0.0f, 0.0f, 0.0f}.data;
+        }
     }
 
     /// @brief Renders the complete image using the given settings
@@ -185,7 +195,7 @@ public:
             rows[y] = row.str();
         }
 
-        std::cout << "\nRendering done in " << (omp_get_wtime() - starttime) << std::endl;
+        std::cout << "Rendering done in " << (omp_get_wtime() - starttime) << std::endl;
 
         free_aligned(sceneMemory);
         free_aligned(skybox_colors);
@@ -266,14 +276,6 @@ public:
         LightRay lr = cam->GenerateRayFromPixel(x, y);
         return lr.direction;
     }
-
-    // std::vector<Vec3> skybox_colors = {
-    //     {0.0f, 0.0f, 0.0f},
-    //     {0.0f, 0.0f, 0.0f},
-    // };
-
-    // std::vector<float> skybox_marks = {
-    //     0.0f, 1.1f};
 
     static __m128 kernel_skyboxOnly(Camera *cam, int x, int y)
     {

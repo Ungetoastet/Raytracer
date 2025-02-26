@@ -1,0 +1,15 @@
+<scene>
+    <materials>
+        <material id="mirror" color="1, 1, 1" reflection="1" roughness="0.1" />
+<material id="brushed" color="1, 1, 1" reflection="0.7" roughness="0.4" />
+<material id="black" color="0.2, 0.2, 0.2" reflection="0.4" roughness="0.6" />
+<material id="red" color="0.5, 0.1, 0.1" reflection="0.6" roughness="0.5" />
+<material id="green" color="0.3, 0.7, 0.3" reflection="0.3" roughness="0.5" />
+
+    </materials>
+    <objects>
+        <Sphere position="0.0, 8.676441006416692, 0.0" radius="1" material="brushed" />
+
+    </objects>
+    <camera position="15, 12, 15" lookAt="5, 5, 5" fieldOfView="45" />
+</scene>

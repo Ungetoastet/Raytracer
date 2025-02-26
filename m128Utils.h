@@ -19,7 +19,7 @@ namespace m128Calc
     }
     inline float dot(__m128 a, __m128 b)
     {
-        __m128 result = _mm_dp_ps(a, b, 0xF1); // Mask 0xF1 = sum all elements
+        __m128 result = _mm_dp_ps(a, b, 0x7F);
         return _mm_cvtss_f32(result);
     }
     __m128 cross(__m128 a, __m128 b)

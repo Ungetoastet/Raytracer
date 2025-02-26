@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import subprocess
 import os
-import imageio
 import math
 import random
 
@@ -73,6 +74,7 @@ def xml_plane(position, rotation, scale, material_id):
     return f'<Plane position="{position.x}, {position.y}, {position.z}" rotation="{rotation.x}, {rotation.y}, {rotation.z}" scale="{scale.x}, {scale.y}, {scale.z}" material="{material_id}" />'
 
 def xml_sphere(position, radius, material_id):
+    # return f'<Plane position="{position.x}, {position.y}, {position.z}" rotation="0, 0, 0" scale="1, 1, 1" material="{material_id}" />'
     return f'<Sphere position="{position.x}, {position.y}, {position.z}" radius="{radius}" material="{material_id}" />'
 
 def xml_camera(position, lookAt, fieldOfView):
@@ -80,35 +82,135 @@ def xml_camera(position, lookAt, fieldOfView):
 
 def xml_root(materials, objects, camera):
     return  f"""<scene>
-                    <materials>
-                        {materials}
-                    </materials>
-                    <objects>
-                        {objects}
-                    </objects>
-                    {camera}
-                </scene>"""
+    <materials>
+        {materials}
+    </materials>
+    <objects>
+        {objects}
+    </objects>
+    {camera}
+</scene>"""
 
 def merge(xml_objs):
     s = ""
-    return [s + o + "\n" for o in xml_objs]
+    for o in xml_objs:
+        s += o + "\n"
+    return s
 
-def update_positions(iteration):
+def update_positions(iteration, timestep):
     print(f"Update Physics {iteration}")
-    return f"Data for iteration {iteration}"
+    for b in balls:
+        b.update_position(timestep, iteration)
+    for i in range(len(balls)-1):
+        for j in range(i+1, len(balls)):
+            balls[i].resolve_collision(balls[j])
 
-def build_xml(iteration):
-    return
+def build_xml(iteration, materials, balls):
+    print(f"Building XML {iteration}")
+    x_mats = [xml_material(m.id, m.color, m.reflection, m.roughness) for m in materials]
+    x_mats.append(xml_material(base_mat.id, base_mat.color, base_mat.reflection, base_mat.roughness))
+    x_balls = [xml_sphere(s.position, s.size, s.mat) for s in balls]
+    # x_balls.append(xml_plane(vec3(), vec3(90, 0, 0), vec3(20, 20, 20), base_mat.id))
+    x_cam = xml_camera(vec3(15, 12, 15), vec3(5, 5, 5), 45)
+    return xml_root(
+        merge(x_mats),
+        merge(x_balls),
+        x_cam
+    )
 
-FPS = 30
-FRAMECOUNT = 200
-SPHERE_COUNT = 15
+class Ball:
+    def __init__(self, position: vec3, velocity: vec3, size, materialID, mass):
+        self.position = position
+        self.velocity = velocity
+        self.size = size
+        self.mat = materialID
+        self.mass = mass
+        
+    def update_position(self, timestep, iteration) -> None:
+        self.velocity += vec3(0, -GRAVITY * timestep, 0)
+        self.position += self.velocity * timestep
+        if self.position.y < self.size:
+            self.position.y = self.size
+            self.velocity.y *= -1
+        if self.position.x < self.size - 10:
+            self.position.x = self.size - 10
+            self.velocity.x *= -1
+        elif self.position.x > 10 - self.size:
+            self.position.x = 10 - self.size
+            self.velocity.x *= -1
+        if self.position.z < self.size - 10:
+            self.position.z = self.size - 10
+            self.velocity.z *= -1
+        elif self.position.z > 10 - self.size:
+            self.position.z = 10 - self.size
+            self.velocity.z *= -1
+        self.position = vec3()
+        self.position.y = 10 * math.sin(iteration * timestep);
 
-spheres = []
+    def resolve_collision(self, other: Ball) -> None:
+        return
+        mindist = (self.size + other.size) * 2
+        dist = (self.position - other.position).magnitude()
+        
+        if dist > mindist:
+            return None
+        
+        normal = (other.position - self.position).normalize()
+        relative_velocity = self.velocity - other.velocity
+        velocity_along_normal = relative_velocity.dot(normal)
+        if velocity_along_normal > 0:
+            return
+        
+        e = 1.0  # Assume perfectly elastic collision
+        j = -(1 + e) * velocity_along_normal
+        j /= (1 / self.mass + 1 / other.mass)
 
-for i in range(FRAMECOUNT):
-    update_positions()
-    data = build_xml(i)
+        # Update velocity
+        self.velocity = self.velocity - (normal * (j / self.mass))
+        other.velocity = other.velocity + (normal * (j / other.mass))
+
+        # Update overlaps
+        overlap = (mindist - dist) + 1e+4
+        self.position = self.position + (normal * (overlap / 2))
+        other.position = other.position - (normal * (overlap / 2))
+
+class Material:
+    def __init__(self, id, color:vec3, reflection, roughness):
+        self.id = id
+        self.color = color
+        self.reflection = reflection
+        self.roughness = roughness
+    
+FPS = 20
+GRAVITY = 1
+TIMESCALE = 2
+FRAME_COUNT = 200
+BALL_COUNT = 1
+
+balls: list[Ball] = []
+base_mat = Material("green", vec3(0.3, 0.7, 0.3), 0.3, 0.5)
+materials = [
+    Material("mirror", vec3(1, 1, 1), 1, 0.1),
+    Material("brushed", vec3(1, 1, 1), 0.7, 0.4),
+    Material("black", vec3(0.2, 0.2, 0.2), 0.4, 0.6),
+    Material("red", vec3(0.5, 0.1, 0.1), 0.6, 0.5),
+]
+
+for _ in range(BALL_COUNT):
+    newball = Ball(
+        vec3.random_in_box(
+            vec3(-10, 0, -10), vec3(10, 10, 10)
+        ),
+        vec3.random_on_sphere() * 2,
+        1,
+        materials[1].id,
+        1
+    )
+    balls.append(newball)
+
+for i in range(FRAME_COUNT):
+    update_positions(i, TIMESCALE/FPS)
+    data = build_xml(i, materials, balls)
     
     # Write scene information to a file
     with open("test.scene", "w") as file:
@@ -124,13 +226,9 @@ for i in range(FRAMECOUNT):
 
 # Combine the .ppm images into an .mp4 video using ffmpeg
 output_video = "output_video.mp4"
-image_files = [f"render_{i:04d}.ppm" for i in range(FRAMECOUNT)]
+image_files = [f"render_{i:04d}.ppm" for i in range(FRAME_COUNT)]
 
-# Use imageio to create the video
-with imageio.get_writer(output_video, fps=FPS) as writer:
-    for img in image_files:
-        image = imageio.imread(img)
-        writer.append_data(image)
+os.system(f"ffmpeg -y -r {FPS} -i render_%04d.ppm -c:v libx264 -pix_fmt yuv420p {output_video} -loglevel error -hide_banner")
 
 for ppm_file in image_files:
     os.remove(ppm_file)

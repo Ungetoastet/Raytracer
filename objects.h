@@ -116,38 +116,66 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
     __m128 position = _mm_load_ps(objectMemStart);
     __m128 scale = _mm_load_ps(objectMemStart + 4);
 
-    if (*(char *)(objectMemStart + 26) == 0) // Sphere Collision
+    // if (*(char *)(objectMemStart + 26) == 0) // Sphere Collision
+    // {
+    //     __m128 center_origin_diff = _mm_sub_ps(position, ray.origin);
+    //     __m128 b_vec = _mm_dp_ps(ray.direction, center_origin_diff, 0xF1);
+    //     float b = _mm_cvtss_f32(b_vec);
+
+    //     float scaleX = getY(scale);
+    //     float oc2 = norm2(center_origin_diff);
+    //     float c = oc2 - scaleX * scaleX;
+
+    //     float delta = b * b - c;
+    //     if (delta < 0)
+    //     {
+    //         return NO_COLLISION;
+    //     }
+
+    //     float dist = -b - sqrtf(delta);
+    //     if (dist <= 0.01f)
+    //     {
+    //         return NO_COLLISION;
+    //     }
+
+    //     __m128 distv = _mm_set1_ps(dist);
+    //     __m128 point = _mm_fmadd_ps(ray.direction, distv, ray.origin);
+    //     __m128 normal = normalized(_mm_sub_ps(point, position));
+
+    //     return {true, point, normal, ray.direction, dist};
+    // }
+
+    if (*(char *)(objectMemStart + 26) == 0)
     {
-        __m128 center_origin_diff = _mm_sub_ps(ray.origin, position);
-
-        __m128 b_vec = _mm_dp_ps(ray.direction, center_origin_diff, 0xF1);
-        __m128 norm2_vec = _mm_set1_ps(norm2(center_origin_diff));
-
-        float b = _mm_cvtss_f32(b_vec);
-
-        float scaleX = getX(scale);
-
-        float c = _mm_cvtss_f32(norm2_vec) - scaleX * scaleX;
-
-        float delta = b * b - c;
-        if (delta < 0)
+        __m128 L = _mm_sub_ps(position, ray.origin);
+        float tca = dot(L, ray.direction);
+        // float tca = Vec3(L).dot(Vec3(ray.direction));
+        if (tca < 0)
         {
             return NO_COLLISION;
         }
-
-        float dist = -b - sqrtf(delta);
-        if (dist <= 0.01)
+        float d2 = norm2(L) - tca * tca;
+        float radius = getX(scale);
+        if (d2 > radius * radius)
         {
             return NO_COLLISION;
         }
+        float thc = sqrt(radius * radius - d2);
+        float t0 = tca - thc;
+        float t1 = tca + thc;
 
-        __m128 distv = _mm_set_ps1(dist);
+        if (t1 > t0)
+        {
+            t0 = t1;
+        }
+
+        __m128 distv = _mm_set1_ps(t0);
         __m128 point = _mm_fmadd_ps(ray.direction, distv, ray.origin);
         __m128 normal = normalized(_mm_sub_ps(point, position));
 
-        // Return collision data
-        return {true, point, normal, ray.direction, dist};
+        return {true, point, normal, ray.direction, t0};
     }
+
     else // Plane Collision
     {
         __m128 normal = _mm_load_ps(objectMemStart + 8);

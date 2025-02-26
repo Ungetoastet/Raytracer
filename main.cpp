@@ -17,6 +17,7 @@ void Scene::ParseCamera(std::map<std::string, std::string> camParams)
     Vec3 position;
     Vec3 lookAt;
     float fov = 45;
+    bool skybox = false;
 
     for (const auto &[key, value] : camParams)
     {
@@ -32,12 +33,16 @@ void Scene::ParseCamera(std::map<std::string, std::string> camParams)
         {
             fov = std::stof(value);
         }
+        else if (key == "skybox")
+        {
+            skybox = (value == "true");
+        }
         else
         {
             std::cerr << "SCENE ERROR: CAMERA PARAMETER " << key << std::endl;
         }
     }
-    this->cam = new Camera(position, lookAt, fov, this->rs, *this);
+    this->cam = new Camera(position, lookAt, fov, this->rs, *this, skybox);
 }
 
 void Scene::cleanup()

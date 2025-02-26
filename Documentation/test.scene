@@ -29,5 +29,5 @@
         <Sphere position="-1, -1, 1" radius="1" material="black" />
     </objects>
     <!-- Kamera -->
-    <camera position="0, 0, -8" lookAt="0, 0, 0" fieldOfView="45" />
+    <camera position="0, 0, -8" lookAt="0, 0, 0" fieldOfView="45" skybox="true"/>
 </scene>

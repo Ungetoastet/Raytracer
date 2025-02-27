@@ -8,8 +8,18 @@
 
     </materials>
     <objects>
-        <Sphere position="0.0, 8.676441006416692, 0.0" radius="1" material="brushed" />
+        <Sphere position="-1.3027801793588454, 6.869402883456784, -1.4591547894134116" radius="1" material="brushed" />
+<Sphere position="8.360926414279332, 2.7386459347107315, -8.747368338569133" radius="1" material="brushed" />
+<Sphere position="-6.571504744200675, 2.7190979456109043, -4.469071003332829" radius="1" material="red" />
+<Sphere position="-4.061549654438561, 10.120276966372636, -5.731405362149163" radius="1" material="mirror" />
+<Sphere position="7.74807079886564, 2.1342013903602184, -1.4507512935690683" radius="1" material="brushed" />
+<Sphere position="6.962624043061738, 6.474319205238925, 8.136981010068853" radius="1" material="black" />
+<Sphere position="8.296654138554286, 7.424432540432516, -7.62493969113913" radius="1" material="black" />
+<Sphere position="1.0695656296168725, 16.792965172035252, -4.674956455221656" radius="1" material="black" />
+<Sphere position="0.5102683107919823, 8.627904492840734, 0.9504799915625255" radius="1" material="red" />
+<Sphere position="1.9858206360354196, 11.891733703388505, -7.845555810011833" radius="1" material="brushed" />
+<Plane position="0.0, 0.0, 0.0" rotation="90, 0, 0" scale="20, 20, 20" material="green" />
 
     </objects>
-    <camera position="15, 12, 15" lookAt="5, 5, 5" fieldOfView="45" />
+    <camera position="12, 10, 12" lookAt="5, 5, 5" fieldOfView="45" skybox="true"/>
 </scene>

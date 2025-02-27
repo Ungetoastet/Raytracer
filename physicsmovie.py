@@ -78,7 +78,7 @@ def xml_sphere(position, radius, material_id):
     return f'<Sphere position="{position.x}, {position.y}, {position.z}" radius="{radius}" material="{material_id}" />'
 
 def xml_camera(position, lookAt, fieldOfView):
-    return f'<camera position="{position.x}, {position.y}, {position.z}" lookAt="{lookAt.x}, {lookAt.y}, {lookAt.z}" fieldOfView="{fieldOfView}" />'
+    return f'<camera position="{position.x}, {position.y}, {position.z}" lookAt="{lookAt.x}, {lookAt.y}, {lookAt.z}" fieldOfView="{fieldOfView}" skybox="true"/>'
 
 def xml_root(materials, objects, camera):
     return  f"""<scene>
@@ -110,8 +110,8 @@ def build_xml(iteration, materials, balls):
     x_mats = [xml_material(m.id, m.color, m.reflection, m.roughness) for m in materials]
     x_mats.append(xml_material(base_mat.id, base_mat.color, base_mat.reflection, base_mat.roughness))
     x_balls = [xml_sphere(s.position, s.size, s.mat) for s in balls]
-    # x_balls.append(xml_plane(vec3(), vec3(90, 0, 0), vec3(20, 20, 20), base_mat.id))
-    x_cam = xml_camera(vec3(15, 12, 15), vec3(5, 5, 5), 45)
+    x_balls.append(xml_plane(vec3(), vec3(90, 0, 0), vec3(20, 20, 20), base_mat.id))
+    x_cam = xml_camera(vec3(12, 10, 12), vec3(5, 5, 5), 45)
     return xml_root(
         merge(x_mats),
         merge(x_balls),
@@ -144,19 +144,16 @@ class Ball:
         elif self.position.z > 10 - self.size:
             self.position.z = 10 - self.size
             self.velocity.z *= -1
-        self.position = vec3()
-        self.position.y = 10 * math.sin(iteration * timestep);
 
     def resolve_collision(self, other: Ball) -> None:
-        return
-        mindist = (self.size + other.size) * 2
+        mindist = self.size + other.size
         dist = (self.position - other.position).magnitude()
         
-        if dist > mindist:
+        if dist >= mindist:
             return None
         
         normal = (other.position - self.position).normalize()
-        relative_velocity = self.velocity - other.velocity
+        relative_velocity = other.velocity - self.velocity
         velocity_along_normal = relative_velocity.dot(normal)
         if velocity_along_normal > 0:
             return
@@ -165,14 +162,14 @@ class Ball:
         j = -(1 + e) * velocity_along_normal
         j /= (1 / self.mass + 1 / other.mass)
 
+        # Update overlaps
+        overlap = (mindist - dist) + 1e-4
+        self.position = self.position - (normal * (overlap / 2))
+        other.position = other.position + (normal * (overlap / 2))
+
         # Update velocity
         self.velocity = self.velocity - (normal * (j / self.mass))
         other.velocity = other.velocity + (normal * (j / other.mass))
-
-        # Update overlaps
-        overlap = (mindist - dist) + 1e+4
-        self.position = self.position + (normal * (overlap / 2))
-        other.position = other.position - (normal * (overlap / 2))
 
 class Material:
     def __init__(self, id, color:vec3, reflection, roughness):
@@ -181,11 +178,12 @@ class Material:
         self.reflection = reflection
         self.roughness = roughness
     
-FPS = 20
+FPS = 60
+MOVIE_SECONDS = 10
 GRAVITY = 1
-TIMESCALE = 2
-FRAME_COUNT = 200
-BALL_COUNT = 1
+TIMESCALE = 4
+BALL_COUNT = 10
+FRAME_COUNT = FPS*MOVIE_SECONDS
 
 balls: list[Ball] = []
 base_mat = Material("green", vec3(0.3, 0.7, 0.3), 0.3, 0.5)
@@ -201,9 +199,9 @@ for _ in range(BALL_COUNT):
         vec3.random_in_box(
             vec3(-10, 0, -10), vec3(10, 10, 10)
         ),
-        vec3.random_on_sphere() * 2,
+        vec3.random_on_sphere() * 5,
         1,
-        materials[1].id,
+        random.choice(materials).id,
         1
     )
     balls.append(newball)
@@ -216,7 +214,7 @@ for i in range(FRAME_COUNT):
     with open("test.scene", "w") as file:
         file.write(data + "\n")
     
-    exe_path = "./main.exe"
+    exe_path = "main.exe"
     process = subprocess.Popen([exe_path], shell=True)
     process.wait()
     

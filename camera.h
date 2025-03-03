@@ -116,6 +116,9 @@ protected:
     float fieldOfView;
     Scene activeScene;
     float *sceneMemory;
+    int bounces;
+    int scatterCount;
+    int scatterRedux;
 
 public:
     __m128 *skybox_colors;
@@ -133,6 +136,9 @@ public:
         this->activeScene = activeScene;
         lookDirection = _mm_sub_ps(position.data, lookAt.data);
         renderSettings = rs;
+        bounces = rs.bounces;
+        scatterCount = rs.scatterbase;
+        scatterRedux = rs.scatterredux;
 
         // Skybox
         if (skybox)
@@ -412,7 +418,7 @@ public:
                 float subpixel_offset_y = fy + (j + 0.5f) * step_width;
 
                 LightRay subpixel_ray = cam->GenerateRayFromPixel(subpixel_offset_x, subpixel_offset_y);
-                __m128 subpixel_color = cam->FullTrace(subpixel_ray, cam->renderSettings.bounces, cam->renderSettings.scatterbase, cam->renderSettings.scatterredux, cam->sceneMemory);
+                __m128 subpixel_color = cam->FullTrace(subpixel_ray, cam->bounces, cam->scatterCount, cam->scatterRedux, cam->sceneMemory);
 
                 final_color = _mm_add_ps(final_color, subpixel_color);
             }

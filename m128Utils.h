@@ -1,6 +1,7 @@
 #include <xmmintrin.h> // Vector instrinsics
 #include <pmmintrin.h> // SSE3
 #include <immintrin.h>
+#include <smmintrin.h>
 
 #include <string>
 #include <cmath>
@@ -19,7 +20,7 @@ namespace m128Calc
     }
     inline float dot(__m128 a, __m128 b)
     {
-        __m128 result = _mm_dp_ps(a, b, 0x7F);
+        __m128 result = _mm_dp_ps(a, b, 0xFF);
         return _mm_cvtss_f32(result);
     }
     __m128 cross(__m128 a, __m128 b)
@@ -42,26 +43,31 @@ namespace m128Calc
     }
 #include <immintrin.h> // For SIMD intrinsics
 
+    // __m128 normalized(__m128 v)
+    // {
+    //     float y = norm2(v);
+    //     float x2 = y * 0.5f;
+    //     const float threehalves = 1.5f;
+
+    //     // Use a union for type-punning safely
+    //     union
+    //     {
+    //         float f;
+    //         int32_t i;
+    //     } floatIntUnion;
+
+    //     floatIntUnion.f = y;
+    //     floatIntUnion.i = 0x5f3759df - (floatIntUnion.i >> 1); // Magic bit manipulation
+    //     y = floatIntUnion.f;
+
+    //     y = y * (threehalves - (x2 * y * y)); // Newton iteration
+    //     __m128 yv = _mm_set1_ps(y);
+    //     return _mm_mul_ps(v, yv);
+    // }
+
     __m128 normalized(__m128 v)
     {
-        float y = norm2(v);
-        float x2 = y * 0.5f;
-        const float threehalves = 1.5f;
-
-        // Use a union for type-punning safely
-        union
-        {
-            float f;
-            int32_t i;
-        } floatIntUnion;
-
-        floatIntUnion.f = y;
-        floatIntUnion.i = 0x5f3759df - (floatIntUnion.i >> 1); // Magic bit manipulation
-        y = floatIntUnion.f;
-
-        y = y * (threehalves - (x2 * y * y)); // Newton iteration
-        __m128 yv = _mm_set1_ps(y);
-        return _mm_mul_ps(v, yv);
+        return _mm_div_ps(v, _mm_sqrt_ps(_mm_dp_ps(v, v, 0x7F)));
     }
 
     std::string toString(__m128 v)

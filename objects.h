@@ -113,63 +113,41 @@ public:
 
 Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
 {
+    __m128 mask = _mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1));
     __m128 position = _mm_load_ps(objectMemStart);
     __m128 scale = _mm_load_ps(objectMemStart + 4);
 
-    // if (*(char *)(objectMemStart + 26) == 0) // Sphere Collision
-    // {
-    //     __m128 center_origin_diff = _mm_sub_ps(position, ray.origin);
-    //     __m128 b_vec = _mm_dp_ps(ray.direction, center_origin_diff, 0xF1);
-    //     float b = _mm_cvtss_f32(b_vec);
+    ray.origin = _mm_and_ps(ray.origin, mask);
+    ray.direction = _mm_and_ps(ray.direction, mask);
 
-    //     float scaleX = getY(scale);
-    //     float oc2 = norm2(center_origin_diff);
-    //     float c = oc2 - scaleX * scaleX;
-
-    //     float delta = b * b - c;
-    //     if (delta < 0)
-    //     {
-    //         return NO_COLLISION;
-    //     }
-
-    //     float dist = -b - sqrtf(delta);
-    //     if (dist <= 0.01f)
-    //     {
-    //         return NO_COLLISION;
-    //     }
-
-    //     __m128 distv = _mm_set1_ps(dist);
-    //     __m128 point = _mm_fmadd_ps(ray.direction, distv, ray.origin);
-    //     __m128 normal = normalized(_mm_sub_ps(point, position));
-
-    //     return {true, point, normal, ray.direction, dist};
-    // }
-
-    if (*(char *)(objectMemStart + 26) == 0)
+    if (*(char *)(objectMemStart + 26) == 0) // Sphere Collision
     {
-        __m128 L = _mm_sub_ps(position, ray.origin);
+        __m128 L = _mm_and_ps(_mm_sub_ps(position, ray.origin), mask);
         float tca = dot(L, ray.direction);
-        // float tca = Vec3(L).dot(Vec3(ray.direction));
-        if (tca < 0)
+        float d2 = dot(L, L) - tca * tca;
+
+        float radius = std::max(getX(scale), std::max(getY(scale), getZ(scale)));
+        float radius2 = radius * radius;
+
+        if (d2 > radius2)
         {
             return NO_COLLISION;
         }
-        float d2 = norm2(L) - tca * tca;
-        float radius = getX(scale);
-        if (d2 > radius * radius)
-        {
-            return NO_COLLISION;
-        }
-        float thc = sqrt(radius * radius - d2);
+
+        float thc = sqrtf(radius2 - d2);
         float t0 = tca - thc;
         float t1 = tca + thc;
 
-        if (t1 > t0)
-        {
-            t0 = t1;
-        }
+        if (t0 > t1)
+            std::swap(t0, t1);
 
-        __m128 distv = _mm_set1_ps(t0);
+        if (t0 < 0)
+            t0 = t1;
+
+        if (t0 < 0 || t0 <= 0.01f)
+            return NO_COLLISION;
+
+        __m128 distv = _mm_set_ps1(t0);
         __m128 point = _mm_fmadd_ps(ray.direction, distv, ray.origin);
         __m128 normal = normalized(_mm_sub_ps(point, position));
 

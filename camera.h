@@ -31,7 +31,7 @@ private:
     {
         // Check Object Collisions
         Collision closestCollision = NO_COLLISION;
-        float closestDistance = 9999;
+        float closestDistance = INFINITY;
         float *closest_obj_ptr = 0;
 
         for (size_t i = 0; i < activeScene.objects.size(); i++)

@@ -126,7 +126,7 @@ private:
             }
             else
             {
-                std::cerr << "RENDERSETTINGS ERROR: UNKNOWN SCATTERREDUX PARAMETER" << std::endl;
+                std::cerr << "RENDERSETTINGS ERROR: UNKNOWN SCATTER PARAMETER" << std::endl;
             }
         }
     }

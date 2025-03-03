@@ -97,11 +97,48 @@ private:
         }
     }
 
+    void SetBounces(std::map<std::string, std::string> xml_params)
+    {
+        for (const auto &[key, value] : xml_params)
+        {
+            if (key == "count")
+            {
+                bounces = stoi(value);
+            }
+            else
+            {
+                std::cerr << "RENDERSETTINGS ERROR: UNKNOWN BOUNCES PARAMETER" << std::endl;
+            }
+        }
+    }
+
+    void SetScatter(std::map<std::string, std::string> xml_params)
+    {
+        for (const auto &[key, value] : xml_params)
+        {
+            if (key == "base")
+            {
+                scatterbase = stoi(value);
+            }
+            else if (key == "reduction")
+            {
+                scatterredux = stoi(value);
+            }
+            else
+            {
+                std::cerr << "RENDERSETTINGS ERROR: UNKNOWN SCATTERREDUX PARAMETER" << std::endl;
+            }
+        }
+    }
+
 public:
     /// @brief Width, Height
     std::vector<int> resolution;
     std::string output_path;
     int supersampling_steps;
+    int bounces;
+    int scatterredux;
+    int scatterbase;
 
     /// @brief How many bits to use for one RGB channel
     int channel_depth;
@@ -158,6 +195,14 @@ public:
             else if (current_setting.tag_name == "supersampling")
             {
                 SetSupersampling(current_setting.parameters);
+            }
+            else if (current_setting.tag_name == "bounces")
+            {
+                SetBounces(current_setting.parameters);
+            }
+            else if (current_setting.tag_name == "scatter")
+            {
+                SetScatter(current_setting.parameters);
             }
             else
             {

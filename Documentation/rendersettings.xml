@@ -17,4 +17,6 @@
     <outputpath path="render.ppm" />
     <depth b="8" />
     <supersampling steps="3" />
+    <scatter base="3" redux="1" />
+    <bounces count="3" />
 </rendersettings>

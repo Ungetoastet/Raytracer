@@ -412,7 +412,7 @@ public:
                 float subpixel_offset_y = fy + (j + 0.5f) * step_width;
 
                 LightRay subpixel_ray = cam->GenerateRayFromPixel(subpixel_offset_x, subpixel_offset_y);
-                __m128 subpixel_color = cam->FullTrace(subpixel_ray, 3, 3, 1, cam->sceneMemory);
+                __m128 subpixel_color = cam->FullTrace(subpixel_ray, cam->renderSettings.bounces, cam->renderSettings.scatterbase, cam->renderSettings.scatterredux, cam->sceneMemory);
 
                 final_color = _mm_add_ps(final_color, subpixel_color);
             }

@@ -61,7 +61,7 @@ void Scene::cleanup()
 
 int main(int argc, char *argv[])
 {
-    if (argc == 0)
+    if (argc < 3)
     {
         std::cerr << "No argument provided. Usage: renderer.exe <scene_path> <rendersetttings_path>" << std::endl;
         return 1;

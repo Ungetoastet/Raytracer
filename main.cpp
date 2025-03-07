@@ -59,11 +59,16 @@ void Scene::cleanup()
     materials.clear();
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-    RenderSettings rendersettings = RenderSettings("./Documentation/rendersettings.xml");
-    // Scene testscene = Scene("./Documentation/test.scene", rendersettings);
-    Scene testscene = Scene("./test.scene", rendersettings);
+    if (argc == 0)
+    {
+        std::cerr << "No argument provided. Usage: renderer.exe <scene_path> <rendersetttings_path>" << std::endl;
+        return 1;
+    }
+
+    RenderSettings rendersettings = RenderSettings(argv[2]);
+    Scene testscene = Scene(argv[1], rendersettings);
 
     testscene.cam->RenderImage(Camera::kernel_full);
     testscene.cleanup();

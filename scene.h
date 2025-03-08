@@ -38,16 +38,20 @@ private:
         {
             std::cerr << "SCENE ERROR: ROOT NODE MUST BE SCENE";
         }
+        bool defined_objects = false;
+        bool defined_camera = false;
         for (std::string scene : scene_root.children)
         {
             XML_Node current_scene = parse_xml_bracket(scene);
             if (current_scene.tag_name == "objects")
             {
                 ParseObjects(current_scene.children);
+                defined_objects = true;
             }
             else if (current_scene.tag_name == "camera")
             {
                 ParseCamera(current_scene.parameters);
+                defined_camera = true;
             }
             else if (current_scene.tag_name == "materials")
             {
@@ -57,6 +61,10 @@ private:
             {
                 std::cerr << "SCENE ERROR: UNKNOWN TAG " << current_scene.tag_name << std::endl;
             }
+        }
+        if (!defined_camera || !defined_objects)
+        {
+            std::cerr << "SCENE ERROR: EITHER NO CAMERA OR NO OBJECTS DEFINED!" << std::endl;
         }
     }
 

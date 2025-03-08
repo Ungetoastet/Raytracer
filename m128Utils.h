@@ -41,7 +41,6 @@ namespace m128Calc
     {
         return dot(v, v);
     }
-#include <immintrin.h> // For SIMD intrinsics
 
     // __m128 normalized(__m128 v)
     // {
@@ -84,15 +83,6 @@ namespace m128Calc
         __m128 scaledMirror = _mm_mul_ps(dotv, mirror);
         return _mm_sub_ps(v, scaledMirror);
     }
-    /// @brief Randomly shift the vector by a tiny amount
-    /// @param strength How far the changed vector is from the original
-    inline __m128 scatter(__m128 v, float strength, unsigned int *seed)
-    {
-        __m128 scatter = random3(seed);
-        __m128 strengthv = _mm_set1_ps(strength);
-        return _mm_fmadd_ps(scatter, strengthv, v);
-    }
-
     __m128 radToEuler(__m128 v)
     {
         __m128 mult = _mm_set1_ps(180.0f / M_PI);
@@ -109,25 +99,58 @@ namespace m128Calc
         return _mm_xor_ps(v, _mm_set1_ps(-0.0f)); // Flips sign of all components
     }
 
+    /// @brief Gives a random float vector in the range [-1, 1]
+    __m128 randomvec(__m128i &seedVector)
+    {
+        // Increment each component of the seed vector with different constants
+        seedVector = _mm_xor_si128(seedVector, _mm_slli_epi32(seedVector, 13)); // Xorshift step 1
+        seedVector = _mm_xor_si128(seedVector, _mm_srli_epi32(seedVector, 17)); // Xorshift step 2
+        seedVector = _mm_xor_si128(seedVector, _mm_slli_epi32(seedVector, 5));
+
+        // Apply a simple bitwise operation for randomness
+        __m128i rand_vals = _mm_xor_si128(seedVector, _mm_srli_epi32(seedVector, 0x15E));
+
+        // Convert the random values to float (scaled to [0, 1])
+        __m128 rand_floats = _mm_cvtepi32_ps(rand_vals); // Convert to float
+
+        // Normalize to the range [0, 1] by dividing by 2^32 (maximum value of uint32_t)
+        rand_floats = _mm_mul_ps(rand_floats, _mm_set1_ps(1.0f / (float)UINT32_MAX));
+
+        // Scale the float values to the range [-1, 1]
+        rand_floats = _mm_mul_ps(rand_floats, _mm_set1_ps(2.0f));
+
+        return rand_floats; // Return the random float vector in range [-1, 1]
+    }
+
+    /// @brief Randomly shift the vector by a tiny amount
+    /// @param strength How far the changed vector is from the original
+    inline __m128 scatter(__m128 v, float strength, __m128i &seed)
+    {
+        __m128 scatter = randomvec(seed);
+        __m128 strengthv = _mm_set1_ps(strength);
+        return _mm_fmadd_ps(scatter, strengthv, v);
+    }
+
     /// @brief Generates a random vector inside a unit sphere. Probability is uniformly distributed
     /// @param seed Random seed
     /// @return
-    inline __m128 random_in_unit_sphere(unsigned int *seed)
+    inline __m128 random_in_unit_sphere(__m128i &seed)
     {
         __m128 rand;
         // Rejection is quicker than normalizing, also ensures uniform distribution
         do
         {
-            rand = random3(seed);
-        } while (norm2(rand) >= 1.0);
+            rand = randomvec(seed);
+        } while (norm2(rand) >= 0.99);
         return rand;
     }
 
-    inline __m128 diffuseScatter(__m128 normalDir, unsigned int *rngSeed)
+    inline __m128 diffuseScatter(__m128 normalDir, __m128i &rngSeed)
     {
         // Lambertian reflection
         __m128 random_in_unit = random_in_unit_sphere(rngSeed);
         __m128 reflected = _mm_add_ps(normalDir, random_in_unit);
         return normalized(reflected);
     }
+
 }

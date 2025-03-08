@@ -17,8 +17,8 @@ class Camera
     using RenderKernel = __m128 (*)(Camera *cam, int x, int y);
 
 private:
-    /// @brief Seed for randomness
-    unsigned int rng_seed = 42;
+    /// @brief Seed vector for randomness
+    __m128i rng_seed;
 
     /// @brief Generates the full recursion for a single ray
     /// @param scene active scene
@@ -87,7 +87,7 @@ private:
                             closestCollision.incoming_direction,
                             closestCollision.normal),
                         diffuse,
-                        &rng_seed)); // Spiegelung plus zufällige Streuung
+                        rng_seed)); // Spiegelung plus zufällige Streuung
 
                 __m128 hit_color = _mm_mul_ps(
                     objCol,
@@ -102,7 +102,7 @@ private:
             // Diffuse Reflektion
             for (; s < scatters + 1; s++)
             {
-                __m128 diffuse_reflected = diffuseScatter(closestCollision.normal, &rng_seed);
+                __m128 diffuse_reflected = diffuseScatter(closestCollision.normal, rng_seed);
 
                 __m128 hit_color = _mm_mul_ps(
                     objCol,
@@ -165,6 +165,8 @@ public:
         bounces = rs.bounces;
         scatterCount = rs.scatterbase;
         scatterRedux = rs.scatterredux;
+
+        rng_seed = _mm_set_epi32(82, 42, 69, 2004);
 
         // Skybox
         if (skybox)
@@ -417,8 +419,8 @@ public:
         }
         // kumulierte Farbe durch die Gesamtzahl der Subpixel berechnet
         // berechnet Durchschnitt der Subpixelfarben um endgültige Pixelfarbe zu bestimmen
-        __m128 div = _mm_set1_ps(cam->renderSettings.supersampling_steps * cam->renderSettings.supersampling_steps);
-        return _mm_div_ps(final_color, div);
+        __m128 div = _mm_set1_ps(1 / (cam->renderSettings.supersampling_steps * cam->renderSettings.supersampling_steps));
+        return _mm_mul_ps(final_color, div);
     }
 
     static __m128 kernel_scattertest(Camera *cam, int x, int y)

@@ -33,7 +33,7 @@ inline __m128 random3(unsigned int *seed)
     return result;
 }
 
-// Do not use in render kernel
+// Do not use in render kernel, poor performance
 struct alignas(16) Vec3
 {
     // 4. Component is padding

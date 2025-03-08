@@ -74,7 +74,6 @@ def xml_plane(position, rotation, scale, material_id):
     return f'<Plane position="{position.x}, {position.y}, {position.z}" rotation="{rotation.x}, {rotation.y}, {rotation.z}" scale="{scale.x}, {scale.y}, {scale.z}" material="{material_id}" />'
 
 def xml_sphere(position, radius, material_id):
-    # return f'<Plane position="{position.x}, {position.y}, {position.z}" rotation="0, 0, 0" scale="1, 1, 1" material="{material_id}" />'
     return f'<Sphere position="{position.x}, {position.y}, {position.z}" radius="{radius}" material="{material_id}" />'
 
 def xml_camera(position, lookAt, fieldOfView):

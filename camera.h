@@ -54,8 +54,6 @@ private:
         {
             // Objekteigenschaften auslesen
             float intensity = *(closest_obj_ptr + 24);
-            __m128 intv = _mm_set_ps1(intensity);
-            __m128 intvr = _mm_set_ps1(1 - intensity);
             float diffuse = *(closest_obj_ptr + 25);
 
             // Scatter and bounce
@@ -72,32 +70,60 @@ private:
             {
                 return resColor;
             }
-            for (int s = 0; s < scatters; s++)
+
+            __m128 col_specular = _mm_setzero_ps();
+            __m128 col_diffuse = _mm_setzero_ps();
+
+            // Ausrechnen, wie viele scatter-rays reflektiert werden. Der Rest wird diffus gestreut
+            int scatters_specular = (int)(scatters * intensity) + 1;
+
+            int s = 0;
+            // Spiegel-Reflektion
+            for (; s < scatters_specular; s++)
             {
                 __m128 specular_reflected = normalized(
-                    scatter(mirrorToNormalized(closestCollision.incoming_direction, closestCollision.normal), diffuse, &rng_seed)); // normalisierte Spiegelung, hinzufügen zufällige Streuung
+                    scatter(
+                        mirrorToNormalized(
+                            closestCollision.incoming_direction,
+                            closestCollision.normal),
+                        diffuse,
+                        &rng_seed)); // Spiegelung plus zufällige Streuung
 
-                // __m128 diffuse_reflected = ???;
-
-                // Calculate the distance from the light source to the collision point
-                float d = closestCollision.distance;
-
-                // Apply light attenuation using the inverse square law
-                float attenuation = 1.0f / (1 + 0.0065 * d * d);
-                __m128 attenuated_intv = _mm_mul_ps(intv, _mm_set_ps1(attenuation));
-
-                __m128 hit_color = _mm_add_ps(
-                    _mm_mul_ps(objCol, intvr),
-                    _mm_mul_ps(
-                        FullTrace(LightRay(closestCollision.point, specular_reflected), bounces - 1, scatters - scatterreduction, scatterreduction, sceneMem),
-                        attenuated_intv)); // Rekursion mit kleinerer bounces- und scatter-Anzahl
-                resColor = _mm_add_ps(resColor, hit_color);
+                __m128 hit_color = _mm_mul_ps(
+                    objCol,
+                    FullTrace(LightRay(closestCollision.point, specular_reflected),
+                              bounces - 1,
+                              scatters - scatterreduction,
+                              scatterreduction,
+                              sceneMem)); // Rekursion mit kleinerer bounces- und scatter-Anzahl
+                col_specular = _mm_add_ps(col_specular, hit_color);
             }
 
-            __m128 scatter_inv = _mm_set_ps1(1.0f / scatters);
-            __m128 blended = _mm_mul_ps(resColor, scatter_inv); // ohne Streustrahlung direkt Eigenfarbe des Objektes zurückgeben
+            // Diffuse Reflektion
+            for (; s < scatters + 1; s++)
+            {
+                __m128 diffuse_reflected = diffuseScatter(closestCollision.normal, &rng_seed);
 
-            return blended;
+                __m128 hit_color = _mm_mul_ps(
+                    objCol,
+                    FullTrace(LightRay(closestCollision.point, diffuse_reflected),
+                              bounces - 1,
+                              scatters - scatterreduction,
+                              scatterreduction,
+                              sceneMem)); // Rekursion mit kleinerer bounces- und scatter-Anzahl
+                col_diffuse = _mm_add_ps(col_diffuse, hit_color);
+            }
+
+            // Reflektierte Strahlen mitteln
+            col_specular = _mm_mul_ps(col_specular, _mm_set1_ps(1.0f / scatters_specular));
+            col_diffuse = _mm_mul_ps(col_diffuse, _mm_set1_ps(1.0f / (1 + scatters - scatters_specular)));
+
+            // Diffuse und Reflektions Anteile mischen
+            resColor = _mm_add_ps(
+                _mm_mul_ps(col_specular, _mm_set1_ps(intensity)),
+                _mm_mul_ps(col_diffuse, _mm_set1_ps(1 - intensity)));
+
+            return resColor;
         }
         else // wenn keine Kollision gefunden, Farbe des Hintergrundes berechnen
         {

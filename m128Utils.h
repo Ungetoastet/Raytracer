@@ -20,7 +20,7 @@ namespace m128Calc
     }
     inline float dot(__m128 a, __m128 b)
     {
-        __m128 result = _mm_dp_ps(a, b, 0xFF);
+        __m128 result = _mm_dp_ps(a, b, 0b01110001);
         return _mm_cvtss_f32(result);
     }
     __m128 cross(__m128 a, __m128 b)
@@ -103,9 +103,31 @@ namespace m128Calc
         __m128 mult = _mm_set1_ps(M_PI / 180.0f);
         return _mm_mul_ps(mult, v);
     }
-    // __m128 sampleHemiSphere(__m128 normalDir, int *rngSeed)
-    // {
-    //     __m128 half = _mm_set1_ps(0.5f);
-    //     __m128 halfNormalDir = _mm_mul_ps(normalDir, half);
-    // }
+
+    inline __m128 flipped(__m128 v)
+    {
+        return _mm_xor_ps(v, _mm_set1_ps(-0.0f)); // Flips sign of all components
+    }
+
+    /// @brief Generates a random vector inside a unit sphere. Probability is uniformly distributed
+    /// @param seed Random seed
+    /// @return
+    inline __m128 random_in_unit_sphere(unsigned int *seed)
+    {
+        __m128 rand;
+        // Rejection is quicker than normalizing, also ensures uniform distribution
+        do
+        {
+            rand = random3(seed);
+        } while (norm2(rand) >= 1.0);
+        return rand;
+    }
+
+    inline __m128 diffuseScatter(__m128 normalDir, unsigned int *rngSeed)
+    {
+        // Lambertian reflection
+        __m128 random_in_unit = random_in_unit_sphere(rngSeed);
+        __m128 reflected = _mm_add_ps(normalDir, random_in_unit);
+        return normalized(reflected);
+    }
 }

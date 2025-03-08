@@ -166,11 +166,18 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
             return NO_COLLISION;
         }
 
+        // __m128 flippedNormal = flipped(normal);
+        // if (divider > 0)
+        // {
+        //     normal = flippedNormal;
+        // }
+
         float dist = dot(_mm_sub_ps(position, ray.origin), normal) / divider;
         if (dist <= 0.01)
         {
             return NO_COLLISION;
         }
+
         __m128 distv = _mm_set_ps1(dist);
         __m128 point = _mm_fmadd_ps(ray.direction, distv, ray.origin);
         __m128 diff = _mm_sub_ps(point, position);

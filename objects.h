@@ -113,20 +113,16 @@ public:
 
 Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
 {
-    __m128 mask = _mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1));
     __m128 position = _mm_load_ps(objectMemStart);
     __m128 scale = _mm_load_ps(objectMemStart + 4);
 
-    ray.origin = _mm_and_ps(ray.origin, mask);
-    ray.direction = _mm_and_ps(ray.direction, mask);
-
     if (*(char *)(objectMemStart + 26) == 0) // Sphere Collision
     {
-        __m128 L = _mm_and_ps(_mm_sub_ps(position, ray.origin), mask);
+        __m128 L = _mm_sub_ps(position, ray.origin);
         float tca = dot(L, ray.direction);
         float d2 = dot(L, L) - tca * tca;
 
-        float radius = std::max(getX(scale), std::max(getY(scale), getZ(scale)));
+        float radius = getX(scale);
         float radius2 = radius * radius;
 
         if (d2 > radius2)
@@ -144,7 +140,7 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
         if (t0 < 0)
             t0 = t1;
 
-        if (t0 < 0 || t0 <= 0.01f)
+        if (t0 < 0 || t0 <= 0.001f)
             return NO_COLLISION;
 
         __m128 distv = _mm_set_ps1(t0);
@@ -161,19 +157,20 @@ Collision MemoryCollision(LightRay &ray, const float *objectMemStart)
         __m128 localY = _mm_load_ps(objectMemStart + 16);
 
         float divider = dot(ray.direction, normal);
-        if (abs(divider) <= 0.01)
+        if (abs(divider) <= 0.001)
         {
             return NO_COLLISION;
         }
 
-        // __m128 flippedNormal = flipped(normal);
-        // if (divider > 0)
-        // {
-        //     normal = flippedNormal;
-        // }
+        __m128 flippedNormal = flipped(normal);
+        if (divider > 0)
+        {
+            normal = flippedNormal;
+            divider *= -1;
+        }
 
         float dist = dot(_mm_sub_ps(position, ray.origin), normal) / divider;
-        if (dist <= 0.01)
+        if (dist <= 0.001)
         {
             return NO_COLLISION;
         }

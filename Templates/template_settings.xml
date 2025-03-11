@@ -1,0 +1,8 @@
+<rendersettings>
+    <resolution x="x" y="y" />
+    <outputpath path="path" />
+    <depth b="8" />
+    <supersampling steps="s" />
+    <scatter base="sb" reduction="sr" />
+    <bounces count="b" />
+</rendersettings>

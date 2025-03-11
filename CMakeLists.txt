@@ -15,8 +15,8 @@ file(GLOB HEADER_FILES "*.h")
 add_executable(main main.cpp ${HEADER_FILES})
 
 # Add unit tests
-file(GLOB TEST_SOURCES "tests/*.cpp")
-add_executable(tests ${TEST_SOURCES} tests/catch_amalgamated.cpp)
+file(GLOB TEST_SOURCES "Tests/*.cpp")
+add_executable(tests ${TEST_SOURCES} Tests/catch_amalgamated.cpp)
 
 # Enable testing
 enable_testing()

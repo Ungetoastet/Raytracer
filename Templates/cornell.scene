@@ -1,0 +1,33 @@
+<scene>
+    <materials>
+        <material id="emissive_white" color="3.0, 3.0, 3.0" reflection="0.3" roughness="-1" />
+        <material id="blue" color="0.1, 0.1, 1" reflection="0.6" roughness="0.5" />
+        <material id="red" color="1, 0.1, 0.1" reflection="0.6" roughness="0.5" />
+        <material id="white" color="1, 1, 1" reflection="0.8" roughness="0.5" />
+        <material id="mirror" color="1, 1, 1" reflection="0.9" roughness="0.1" />
+        <material id="black" color="1, 0.1, 0.1" reflection="0.4" roughness="0.6" />
+    </materials>
+    <objects>
+        <!-- size="4" ist kurz für scale="4,4,4" -->
+        <!-- Deckenlicht -->
+        <Plane position="0, 1.9, 0" rotation="90, 0, 0" size="1" material="emissive_white" />
+        <!-- Decke -->
+        <Plane position="0, 2, 0" rotation="90, 0, 0" size="5" material="white" />
+        <!-- Boden -->
+        <Plane position="0, -2, 0" rotation="90, 0, 0" size="5" material="white" />
+        <!-- Hintere Wand -->
+        <Plane position="0, 0, 5" rotation="0, 0, 0" scale="5, 2, 5" material="white" />
+        <!-- Linke Wand -->
+        <Plane position="3, 0, 0" rotation="0, 90, 0" scale="5, 2, 5" material="blue" />
+        <!-- Rechte Wand -->
+        <Plane position="-3, 0, 0" rotation="0, 90, 0" scale="5, 2, 5" material="red" />
+        <!-- Linker Ball -->
+        <Sphere position="1, -1, -1" radius="1.5" material="white" />
+        <!-- Rechter Ball -->
+        <Sphere position="-1.5, -2, 0" radius="1" material="mirror" />
+        <!-- Mittlerer Ball -->
+        <Sphere position="-1, -1, 1" radius="1" material="black" />
+    </objects>
+    <!-- Kamera -->
+    <camera position="0, 0, -8" lookAt="0, 0, 0" fieldOfView="45" skybox="true"/>
+</scene>

@@ -1,0 +1,10 @@
+<scene>
+    <materials>
+        <material id="id" color="r, g, b" reflection="rf" roughness="rn" />
+    </materials>
+    <objects>
+        <Plane position="x, y, z" rotation="rx, ry, rz" scale="sx, sy, sz" material="id" />
+        <Sphere position="x, y, z" radius="r" material="id" />
+    </objects>
+    <camera position="x, y, z" lookAt="lx, ly, lz" fieldOfView="fov" skybox="true"/>
+</scene>

@@ -152,5 +152,4 @@ namespace m128Calc
         __m128 reflected = _mm_add_ps(normalDir, random_in_unit);
         return normalized(reflected);
     }
-
 }

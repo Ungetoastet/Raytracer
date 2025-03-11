@@ -33,3 +33,6 @@
 main
 render.ppm
 analysis.txt
+/Build
+perf.data
+perf.data.old

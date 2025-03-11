@@ -2,6 +2,12 @@
 
 Raytracer - Projekt in CPP für Algorithm Engineering Kurs im WS24/25. Entwickelt von Nele Rissiek und Robert Scheer.
 
+<img src="/Documentation/cornell.png" />
+
+<video width="320" height="240" controls>
+  <source src="/Documentation/output_video.mp4" type="video/mp4">
+</video>
+
 # Builden
 
 Das Projekt kann mit cmake wie folgt gebuildet werden.
@@ -147,3 +153,11 @@ Eine Kamera ist wie folgt definiert:
 `fieldOfView` gibt das vertikale Sichtfeld der Kamera in Grad an. Ein Wert von 45 wird empfohlen.
 
 `skybox` gibt an, wie sich der Hintergrund der Szene verhält. Ist `skybox="false"`, ist der Hintergrund der Szene schwarz. Ist `skybox="true"` ist der Hintergrund der Szene ein Farbverlauf, der dem eines Sonnenuntergangs ähnelt.
+
+# Film
+
+Ist [python](https://www.python.org/downloads/) und [ffmpeg](https://www.ffmpeg.org/download.html) installiert, kann mit `python physicsmovie.py` ein kleiner mp4 Film gerendert werden.
+
+Dabei wird in Python eine einfache Physiksimulation einfacher Kugeln durchgeführt. Für jedes Zeitschritt werden die Positionen der Kugeln in einer Szenen-Datei ausgegeben und dann der Renderer ausgeführt.
+
+Die gerenderten Bilder werden dann mit ffmpeg zu einem Film zusammengeführt.

@@ -210,11 +210,11 @@ for i in range(FRAME_COUNT):
     data = build_xml(i, materials, balls)
     
     # Write scene information to a file
-    with open("test.scene", "w") as file:
+    with open("movie.scene", "w") as file:
         file.write(data + "\n")
     
     exe_path = "main.exe"
-    process = subprocess.Popen([exe_path], shell=True)
+    process = subprocess.Popen([exe_path, "Templates/settings_default.xml", "movie.scene"], shell=True)
     process.wait()
     
     # Rename the output image to include the iteration number

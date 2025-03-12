@@ -161,3 +161,5 @@ Ist [python](https://www.python.org/downloads/) und [ffmpeg](https://www.ffmpeg.
 Dabei wird in Python eine einfache Physiksimulation einfacher Kugeln durchgeführt. Für jedes Zeitschritt werden die Positionen der Kugeln in einer Szenen-Datei ausgegeben und dann der Renderer ausgeführt.
 
 Die gerenderten Bilder werden dann mit ffmpeg zu einem Film zusammengeführt.
+
+Eine Version eines solchen Films ist unter `/Documentation/output_video.mp4` zu finden.

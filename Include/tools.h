@@ -131,7 +131,7 @@ struct alignas(16) Vec3
     }
 };
 
-std::string readFile(const std::string &path_to_file)
+inline std::string readFile(const std::string &path_to_file)
 {
     std::ifstream file(path_to_file);
     std::string line;
@@ -153,7 +153,7 @@ std::string readFile(const std::string &path_to_file)
     }
 }
 
-std::string removeComments(const std::string &xmlContent)
+inline std::string removeComments(const std::string &xmlContent)
 {
     std::string result;
     size_t pos = 0;
@@ -205,7 +205,7 @@ public:
 /// @brief Takes an xml structure string and returns an XML_Node
 /// @param xml: string with xml type structure
 /// @return xmlnode
-XML_Node parse_xml_bracket(const std::string xml)
+inline XML_Node parse_xml_bracket(const std::string xml)
 {
     // Find first tag
     size_t startPos = xml.find('<');
@@ -335,7 +335,7 @@ XML_Node parse_xml_bracket(const std::string xml)
 /// @param points The colors inside the gradient
 /// @param marks The positions where the colors are in the gradient, must be sorted. First must be 0, last must be 1.
 /// @return Color inside gradient
-__m128 get_gradient(__m128 *points, std::vector<float> &marks, float position)
+inline __m128 get_gradient(__m128 *points, std::vector<float> &marks, float position)
 {
     for (size_t i = 1; i < marks.size(); i++)
     {
@@ -362,7 +362,7 @@ struct Collision
 
 const Collision NO_COLLISION = {false, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0};
 
-std::pair<std::vector<size_t>, std::vector<float>> sortWithIndex(const std::vector<float> &arr)
+inline std::pair<std::vector<size_t>, std::vector<float>> sortWithIndex(const std::vector<float> &arr)
 {
     std::vector<std::pair<float, size_t>> valueIndexPairs;
     for (size_t i = 0; i < arr.size(); i++)
@@ -382,16 +382,4 @@ std::pair<std::vector<size_t>, std::vector<float>> sortWithIndex(const std::vect
     }
 
     return {ogIndices, sortedArray};
-}
-
-std::string get_progress_bar(float progress, int width = 50)
-{
-    int filled_length = static_cast<int>(progress * width);
-    int unfilled_length = width - filled_length;
-
-    // Create the progress bar string
-    std::string bar(filled_length, '#');
-    bar.append(unfilled_length, ' ');
-
-    return bar;
 }

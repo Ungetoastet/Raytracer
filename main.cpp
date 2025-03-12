@@ -1,16 +1,16 @@
 #include <iostream>
 #include <string>
 
-#include "tools.h"
-#include "m128Utils.h"
-#include "lightray.h"
-#include "rendersettings.h"
-#include "rendertools.h"
-#include "materials.h"
-#include "objects.h"
-#include "scene.h"
-#include "memprep.h"
-#include "camera.h"
+#include "Include/tools.h"
+#include "Include/m128Utils.h"
+#include "Include/lightray.h"
+#include "Include/rendersettings.h"
+#include "Include/rendertools.h"
+#include "Include/materials.h"
+#include "Include/objects.h"
+#include "Include/scene.h"
+#include "Include/memprep.h"
+#include "Include/camera.h"
 
 void Scene::ParseCamera(std::map<std::string, std::string> camParams)
 {

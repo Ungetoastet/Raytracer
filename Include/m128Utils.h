@@ -64,16 +64,16 @@ namespace m128Calc
     //     return _mm_mul_ps(v, yv);
     // }
 
-    __m128 normalized(__m128 v)
+    inline __m128 normalized(__m128 v)
     {
         return _mm_div_ps(v, _mm_sqrt_ps(_mm_dp_ps(v, v, 0x7F)));
     }
 
-    std::string toString(__m128 v)
+    inline std::string toString(__m128 v)
     {
         return std::to_string(getX(v)) + ", " + std::to_string(getY(v)) + ", " + std::to_string(getZ(v));
     }
-    std::string toStringW(__m128 v)
+    inline std::string toStringW(__m128 v)
     {
         return std::to_string(getX(v)) + ", " + std::to_string(getY(v)) + ", " + std::to_string(getZ(v)) + ", " + std::to_string(getW(v));
     }
@@ -83,12 +83,12 @@ namespace m128Calc
         __m128 scaledMirror = _mm_mul_ps(dotv, mirror);
         return _mm_sub_ps(v, scaledMirror);
     }
-    __m128 radToEuler(__m128 v)
+    inline __m128 radToEuler(__m128 v)
     {
         __m128 mult = _mm_set1_ps(180.0f / M_PI);
         return _mm_mul_ps(mult, v);
     }
-    __m128 eulerToRad(__m128 v)
+    inline __m128 eulerToRad(__m128 v)
     {
         __m128 mult = _mm_set1_ps(M_PI / 180.0f);
         return _mm_mul_ps(mult, v);

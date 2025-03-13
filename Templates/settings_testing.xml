@@ -1,8 +1,8 @@
 <rendersettings>
-    <resolution x="1280" y="720" />
+    <resolution x="640" y="360" />
     <outputpath path="render.ppm" />
     <depth b="8" />
-    <supersampling steps="3" />
-    <scatter base="4" reduction="1" />
-    <bounces count="4" />
+    <supersampling steps="2" />
+    <scatter base="3" reduction="1" />
+    <bounces count="2" />
 </rendersettings>

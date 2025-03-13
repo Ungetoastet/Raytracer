@@ -66,10 +66,13 @@ private:
             }
             // wenn Material diffus & nicht emissiv
             __m128 resColor = _mm_setzero_ps();
-            if (bounces == 0 || scatters <= 0)
+            if (bounces == 0)
             {
                 return resColor;
             }
+
+            // Branchless: Sorgt dafuer, dass scatter immer mind 1 ist
+            scatters = scatters * (scatters > 0) + (scatters <= 0);
 
             __m128 col_specular = _mm_setzero_ps();
             __m128 col_diffuse = _mm_setzero_ps();

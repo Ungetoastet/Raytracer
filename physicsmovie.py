@@ -213,8 +213,8 @@ for i in range(FRAME_COUNT):
     with open("movie.scene", "w") as file:
         file.write(data + "\n")
     
-    exe_path = "main.exe"
-    process = subprocess.Popen([exe_path, "Templates/settings_default.xml", "movie.scene"], shell=True)
+    exe_path = "./Builds/main.exe"
+    process = subprocess.Popen([exe_path, "movie.scene", "Templates/settings_default.xml"], shell=True)
     process.wait()
     
     # Rename the output image to include the iteration number

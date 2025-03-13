@@ -259,7 +259,7 @@ public:
                 }
             }
 
-            std::cout << "Smooting done in " << (omp_get_wtime() - starttime) << std::endl;
+            std::cout << "Smoothing done in " << (omp_get_wtime() - starttime) << std::endl;
         }
 
         starttime = omp_get_wtime();

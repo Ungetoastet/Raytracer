@@ -119,7 +119,7 @@ Dabei ist `id` der Code, um Objekten das Material zuzuweisen.
 `color` ist die Grundfarbe des Objekts in RGB.
 Dabei sind die Werte im Bereich $[0, 1]$ und können als Dezimalzahl geschrieben werden.
 
-`reflection` gibt an, wie stark das Material spiegelnd reflektiert. Der Wert kann dabei im Bereich $[0, 1]$ sein, wobei ein Wert von $0$ eine vollständig diffuse Reflektion ist und ein Wert von $1$ eine vollständig spiegelnde Reflektion.
+`reflection` gibt an, wie stark das Material spiegelnd reflektiert. Der Wert kann dabei im Bereich $(0, 1)$ sein, wobei ein Wert von $0$ eine vollständig diffuse Reflektion ist und ein Wert von $1$ eine vollständig spiegelnde Reflektion.
 
 `roughness` gibt an, wie rau die spiegelnde Reflektion ist. Ein Wert von $0$ ist dabei eine perfekte Reflektion, z.B. für Spiegel oder glattes Plastik.
 Die `roughness` darf maximal einen Wert von $1$ annehmen.

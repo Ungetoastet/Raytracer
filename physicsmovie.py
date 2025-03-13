@@ -4,6 +4,7 @@ import subprocess
 import os
 import math
 import random
+import time
 
 class vec3:
     def __init__(self, x=0.0, y=0.0, z=0.0):
@@ -97,7 +98,6 @@ def merge(xml_objs):
     return s
 
 def update_positions(iteration, timestep):
-    print(f"Update Physics {iteration}")
     for b in balls:
         b.update_position(timestep, iteration)
     for i in range(len(balls)-1):
@@ -105,7 +105,6 @@ def update_positions(iteration, timestep):
             balls[i].resolve_collision(balls[j])
 
 def build_xml(iteration, materials, balls):
-    print(f"Building XML {iteration}")
     x_mats = [xml_material(m.id, m.color, m.reflection, m.roughness) for m in materials]
     x_mats.append(xml_material(base_mat.id, base_mat.color, base_mat.reflection, base_mat.roughness))
     x_balls = [xml_sphere(s.position, s.size, s.mat) for s in balls]
@@ -184,7 +183,7 @@ TIMESCALE = 3
 FRAME_COUNT = FPS*MOVIE_SECONDS
 
 balls: list[Ball] = []
-base_mat = Material("green", vec3(0.3, 0.7, 0.3), 0.3, 0.5)
+base_mat = Material("ground", vec3(0.4, 0.7, 0.4), 0.5, 0.2)
 materials = [
     Material("emissive_white", vec3(3.0, 3.0, 3.0), 0.3, -1),
     Material("green", vec3(0.3, 0.7, 0.3), 0.3, 0.5),
@@ -194,25 +193,26 @@ materials = [
     Material("emissive_red", vec3(2.0, 0.0, 0.0), 0.3, -1),
     Material("white", vec3(1, 1, 1), 0.8, 0.5),
     Material("white_diff", vec3(1, 1, 1), 0.0, 0.5),
-    Material("mirror", vec3(1, 1, 1), 1.0, 0.1),
-    Material("black", vec3(1, 0.1, 0.1), 0.4, 0.6)
+    Material("mirror", vec3(1, 1, 1), 0.9, 0.1),
+    Material("black", vec3(0.1, 0.1, 0.1), 0.4, 0.6)
 ]
 
 
-for m in materials:
+for m in range(len(materials)):
     newball = Ball(
         vec3.random_in_box(
             vec3(-10, 0, -10), vec3(10, 10, 10)
         ),
         vec3.random_on_sphere() * 5,
         1,
-        m.id,
+        materials[m].id,
         1
     )
     balls.append(newball)
 
+starttime = time.time()
 for i in range(FRAME_COUNT):
-    print(f"\nRendering Frame {i+1}/{FRAME_COUNT}")
+    print(f"\n[{time.time()-starttime:.1f}s] Rendering Frame {i+1}/{FRAME_COUNT}")
     update_positions(i, TIMESCALE/FPS)
     data = build_xml(i, materials, balls)
     

@@ -4,9 +4,7 @@ Raytracer - Projekt in CPP für Algorithm Engineering Kurs im WS24/25. Entwickel
 
 <img src="/Documentation/cornell.png" />
 
-<video width="320" height="240" controls>
-  <source src="/Documentation/output_video.mp4" type="video/mp4">
-</video>
+https://github.com/user-attachments/assets/580f2c83-9f30-405c-a3fd-4f1749d2f3c7
 
 # Vorraussetzungen
 

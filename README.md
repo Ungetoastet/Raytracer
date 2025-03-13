@@ -8,6 +8,20 @@ Raytracer - Projekt in CPP für Algorithm Engineering Kurs im WS24/25. Entwickel
   <source src="/Documentation/output_video.mp4" type="video/mp4">
 </video>
 
+# Vorraussetzungen
+
+## Linux
+
+Getestet mit: `g++ (GCC) 13.2.0`
+
+## Windows
+
+Getestet mit: `Rev2, Built by MSYS2 project, 14.2.0`
+
+Installiert mit: [Microsoft Tutorial](https://code.visualstudio.com/docs/cpp/config-mingw)
+
+`g++ (GCC) 13.2.0` FUNKTIONIERT NICHT! Weitere Informationen in Abschnitt am Ende der Seite.
+
 # Builden
 
 Das Projekt kann mit cmake wie folgt gebuildet werden.
@@ -26,7 +40,7 @@ Dann:
 1. `mkdir Build`
 2. `cd Build`
 3. `cmake .. -G "MinGW Makefiles"`
-4. `make`
+4. `mingw32-make`
 
 Danach kann das Programm [ausgeführt werden](README.md#Ausführen).
 
@@ -173,3 +187,16 @@ Dabei wird in Python eine einfache Physiksimulation einfacher Kugeln durchgefüh
 Die gerenderten Bilder werden dann mit ffmpeg zu einem Film zusammengeführt.
 
 Eine Version eines solchen Films ist unter `/Documentation/output_video.mp4` zu finden.
+
+# Extra: Windows Compiler Probleme
+
+Wir haben versucht, das Projekt auf Windows mit dem `g++ (GCC) 13.2.0` Compiler zu builden.
+Dabei ist das Render Programm in der Schleife ohne eine Meldung terminiert.
+Compiliert wurde mit den selben Flags wie auf Linux und auf Windows mit der `Rev2, Built by MSYS2 project, 14.2.0` Kompiler Version.
+
+Auch wenn mit `-Wall -Wextra -Werror` und `-fsanitize=address` und `-fsanitize=undefined` kompiliert wurde, hat der GCC Kompiler auf windows keine Fehler geworfen.
+
+Nach einigen erfolglosen Debugging Versuchen beschlossen wir, den Windows GCC Kompiler einfach auf den MSYS2 14.2 Kompiler zu upgraden.
+
+Eine Anleitung dafuer kann hier gefunden werden:
+[Microsoft Tutorial](https://code.visualstudio.com/docs/cpp/config-mingw)

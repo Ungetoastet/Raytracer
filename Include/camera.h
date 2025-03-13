@@ -274,7 +274,7 @@ public:
 
         // Field of view and aspect ratio
         float aspectRatio = static_cast<float>(renderSettings.resolution[0]) / renderSettings.resolution[1];
-        float fovY = std::tan((fieldOfView * 0.5f) * (M_PI / 180.0f));
+        float fovY = std::tan((fieldOfView * 0.5f) * (3.1415926535f / 180.0f));
         float fovX = fovY * aspectRatio;
 
         // Normalized device coordinates for the pixel

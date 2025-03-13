@@ -85,12 +85,12 @@ namespace m128Calc
     }
     inline __m128 radToEuler(__m128 v)
     {
-        __m128 mult = _mm_set1_ps(180.0f / M_PI);
+        __m128 mult = _mm_set1_ps(180.0f / 3.1415926535f);
         return _mm_mul_ps(mult, v);
     }
     inline __m128 eulerToRad(__m128 v)
     {
-        __m128 mult = _mm_set1_ps(M_PI / 180.0f);
+        __m128 mult = _mm_set1_ps(3.1415926535f / 180.0f);
         return _mm_mul_ps(mult, v);
     }
 

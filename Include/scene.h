@@ -5,25 +5,6 @@
 
 class Camera;
 
-Vec3 parseVec3(const std::string &input)
-{
-    std::stringstream ss(input);
-    std::vector<float> values;
-    std::string token;
-
-    while (std::getline(ss, token, ','))
-    {
-        values.push_back(std::stof(token));
-    }
-
-    if (values.size() != 3)
-    {
-        std::cerr << "SCENE ERROR: Invalid Vec3 format" << std::endl;
-    }
-
-    return Vec3(values[0], values[1], values[2]);
-}
-
 class Scene
 {
 private:

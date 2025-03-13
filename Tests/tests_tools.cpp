@@ -89,3 +89,12 @@ TEST_CASE("Parse XML Bracket", "[XML]")
     REQUIRE(node.parameters["attr"] == "value");
     REQUIRE(node.children.size() == 1);
 }
+
+TEST_CASE("String to Vec", "[XML]")
+{
+    std::string text = "0.123, 1.234, 2.345";
+    Vec3 v = parseVec3(text);
+    REQUIRE(v.x() == Approx(0.123f));
+    REQUIRE(v.y() == Approx(1.234f));
+    REQUIRE(v.z() == Approx(2.345f));
+}

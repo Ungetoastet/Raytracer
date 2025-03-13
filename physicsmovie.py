@@ -180,27 +180,33 @@ class Material:
 FPS = 60
 MOVIE_SECONDS = 10
 GRAVITY = 1
-TIMESCALE = 4
-BALL_COUNT = 10
+TIMESCALE = 3
 FRAME_COUNT = FPS*MOVIE_SECONDS
 
 balls: list[Ball] = []
 base_mat = Material("green", vec3(0.3, 0.7, 0.3), 0.3, 0.5)
 materials = [
-    Material("mirror", vec3(1, 1, 1), 1, 0.1),
-    Material("brushed", vec3(1, 1, 1), 0.7, 0.4),
-    Material("black", vec3(0.2, 0.2, 0.2), 0.4, 0.6),
-    Material("red", vec3(0.5, 0.1, 0.1), 0.6, 0.5),
+    Material("emissive_white", vec3(3.0, 3.0, 3.0), 0.3, -1),
+    Material("green", vec3(0.3, 0.7, 0.3), 0.3, 0.5),
+    Material("lblue", vec3(0.1, 0.1, 1), 0.6, 0.5),
+    Material("blue", vec3(0.5, 0.5, 1), 0.2, 0.5),
+    Material("red", vec3(1, 0.1, 0.1), 0.6, 0.5),
+    Material("emissive_red", vec3(2.0, 0.0, 0.0), 0.3, -1),
+    Material("white", vec3(1, 1, 1), 0.8, 0.5),
+    Material("white_diff", vec3(1, 1, 1), 0.0, 0.5),
+    Material("mirror", vec3(1, 1, 1), 1.0, 0.1),
+    Material("black", vec3(1, 0.1, 0.1), 0.4, 0.6)
 ]
 
-for _ in range(BALL_COUNT):
+
+for i in range(materials):
     newball = Ball(
         vec3.random_in_box(
             vec3(-10, 0, -10), vec3(10, 10, 10)
         ),
         vec3.random_on_sphere() * 5,
         1,
-        random.choice(materials).id,
+        materials[i].id,
         1
     )
     balls.append(newball)
@@ -213,8 +219,8 @@ for i in range(FRAME_COUNT):
     with open("movie.scene", "w") as file:
         file.write(data + "\n")
     
-    exe_path = "./Builds/main.exe"
-    process = subprocess.Popen([exe_path, "movie.scene", "Templates/settings_default.xml"], shell=True)
+    exe_path = ".\\Build\\main.exe"
+    process = subprocess.Popen([exe_path, "movie.scene", "Templates/settings_quality.xml"], shell=True)
     process.wait()
     
     # Rename the output image to include the iteration number

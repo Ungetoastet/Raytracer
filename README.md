@@ -72,16 +72,17 @@ Die Empfohlenen Einstellungen sind in der `/Templates/settings_default.xml`.
 
 Es sind folgende Einstellungen zur Verfügung:
 
-| Einstellung           | Funktion                                                                                                                                                                                                    |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| resolution / x        | Breite des Bilds in Pixeln                                                                                                                                                                                  |
-| resolution / y        | Höhe des Bilds in Pixeln                                                                                                                                                                                    |
-| outputpath / path     | Pfad des gerenderten Bilds                                                                                                                                                                                  |
-| depth / b             | Farbtiefe des gerenderten Bilds in bit. Muss entweder 8 oder 16 sein. Eine Tiefe von 16 kann [Color Banding](https://en.wikipedia.org/wiki/Colour_banding) reduzieren, führt aber zu größeren Dateigrößen.  |
-| supersampling / steps | Gibt an, wie viele Strahlen pro Bildpixel berechnet werden. Die genaue Anzahl ist steps\*steps. Reduziert Bildrauschen aber hat einen sehr großen Einfluss auf die Programmlaufzeit.                        |
-| scatter / base        | Gibt an, in wie viele neue Lichtstrahlen ein Lichtstrahl bei einer Reflektion geteilt wird. Ein höherer Wert reduziert Bildrauschen, beeinflusst aber bei komplexen Szenen die Programmlaufzeit sehr stark. |
-| scatter / reduction   | Gibt an, um wie viel der scatter/base Wert pro Reflektion reduziert wird. Ein höherer Wert führt zu schnelleren Renderzeiten, allerdings unter Verlust der Qualität der Reflektionen.                       |
-| bounces / count       | Wie oft darf ein einzelner Lichtstrahl maximal reflektiert werden? Erreicht ein Lichtstrahl diese Grenze, wird schwarz zurückgegeben.                                                                       |
+| Einstellung               | Funktion                                                                                                                                                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| resolution / x            | Breite des Bilds in Pixeln                                                                                                                                                                                  |
+| resolution / y            | Höhe des Bilds in Pixeln                                                                                                                                                                                    |
+| outputpath / path         | Pfad des gerenderten Bilds                                                                                                                                                                                  |
+| depth / b                 | Farbtiefe des gerenderten Bilds in bit. Muss entweder 8 oder 16 sein. Eine Tiefe von 16 kann [Color Banding](https://en.wikipedia.org/wiki/Colour_banding) reduzieren, führt aber zu größeren Dateigrößen.  |
+| supersampling / steps     | Gibt an, wie viele Strahlen pro Bildpixel berechnet werden. Die genaue Anzahl ist steps\*steps. Reduziert Bildrauschen aber hat einen sehr großen Einfluss auf die Programmlaufzeit.                        |
+| supersampling / smoothing | Gibt an, ob ein Gauss Glaettungsfilter auf dem gerenderten Bild angewendet werden soll.                                                                                                                     |
+| scatter / base            | Gibt an, in wie viele neue Lichtstrahlen ein Lichtstrahl bei einer Reflektion geteilt wird. Ein höherer Wert reduziert Bildrauschen, beeinflusst aber bei komplexen Szenen die Programmlaufzeit sehr stark. |
+| scatter / reduction       | Gibt an, um wie viel der scatter/base Wert pro Reflektion reduziert wird. Ein höherer Wert führt zu schnelleren Renderzeiten, allerdings unter Verlust der Qualität der Reflektionen.                       |
+| bounces / count           | Wie oft darf ein einzelner Lichtstrahl maximal reflektiert werden? Erreicht ein Lichtstrahl diese Grenze, wird schwarz zurückgegeben.                                                                       |
 
 # Szene
 

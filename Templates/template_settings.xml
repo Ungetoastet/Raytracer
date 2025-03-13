@@ -2,7 +2,7 @@
     <resolution x="x" y="y" />
     <outputpath path="path" />
     <depth b="8" />
-    <supersampling steps="s" />
+    <supersampling steps="s" smoothing="true" />
     <scatter base="sb" reduction="sr" />
     <bounces count="b" />
 </rendersettings>

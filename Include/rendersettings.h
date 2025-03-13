@@ -85,11 +85,16 @@ private:
     void SetSupersampling(std::map<std::string, std::string> xml_params)
     {
         supersampling_steps = -1;
+        smoothing = false;
         for (const auto &[key, value] : xml_params)
         {
             if (key == "steps")
             {
                 supersampling_steps = stoi(value);
+            }
+            else if (key == "smoothing")
+            {
+                smoothing = (value == "true");
             }
             else
             {
@@ -155,6 +160,7 @@ public:
     int bounces;
     int scatterredux;
     int scatterbase;
+    bool smoothing;
 
     /// @brief How many bits to use for one RGB channel
     int channel_depth;

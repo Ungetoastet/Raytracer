@@ -2,7 +2,7 @@
     <resolution x="640" y="360" />
     <outputpath path="render.ppm" />
     <depth b="8" />
-    <supersampling steps="2" />
+    <supersampling steps="2" smoothing="false" />
     <scatter base="3" reduction="1" />
     <bounces count="2" />
 </rendersettings>

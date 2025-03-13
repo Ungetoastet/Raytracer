@@ -199,19 +199,20 @@ materials = [
 ]
 
 
-for i in range(materials):
+for m in materials:
     newball = Ball(
         vec3.random_in_box(
             vec3(-10, 0, -10), vec3(10, 10, 10)
         ),
         vec3.random_on_sphere() * 5,
         1,
-        materials[i].id,
+        m.id,
         1
     )
     balls.append(newball)
 
 for i in range(FRAME_COUNT):
+    print(f"\nRendering Frame {i+1}/{FRAME_COUNT}")
     update_positions(i, TIMESCALE/FPS)
     data = build_xml(i, materials, balls)
     

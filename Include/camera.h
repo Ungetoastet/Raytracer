@@ -207,32 +207,105 @@ public:
 
         starttime = omp_get_wtime();
 
+        // Allocate memory for imagedata
+        __m128 **imageData = (__m128 **)malloc(renderSettings.resolution[0] * sizeof(__m128 *));
+        __m128 **smoothedImageData = (__m128 **)malloc(renderSettings.resolution[0] * sizeof(__m128 *));
+        for (int x = 0; x < renderSettings.resolution[0]; x++)
+        {
+            imageData[x] = (__m128 *)malloc(renderSettings.resolution[1] * sizeof(__m128));
+            smoothedImageData[x] = (__m128 *)malloc(renderSettings.resolution[1] * sizeof(__m128));
+        }
+
         // Compute color for each pixel
-        // Zeilen in werden parallelisiert
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
         for (int y = 0; y < renderSettings.resolution[1]; y++)
         {
-            std::string buffer;
-            buffer.reserve(renderSettings.resolution[0] * 12); // Preallocate space
-
-            std::ostringstream row;
-            row << std::move(buffer);
-
             for (int x = 0; x < renderSettings.resolution[0]; x++)
             {
                 __m128 kernel_res = kernel(this, x, y);
-                __m128 color = _mm_mul_ps(kernel_res, calculatedChannelDepth);
-                float components[4];
-                _mm_storeu_ps(components, color);
-                int r = std::min(255, std::max(0, static_cast<int>(components[0])));
-                int g = std::min(255, std::max(0, static_cast<int>(components[1])));
-                int b = std::min(255, std::max(0, static_cast<int>(components[2])));
-                row << r << " " << g << " " << b << " ";
+                imageData[x][y] = _mm_mul_ps(kernel_res, calculatedChannelDepth);
             }
-            rows[y] = row.str();
         }
 
         std::cout << "Rendering done in " << (omp_get_wtime() - starttime) << std::endl;
+
+        if (renderSettings.smoothing)
+        {
+            starttime = omp_get_wtime();
+
+            // 3x3 Gaussian blur kernel
+            const __m128 gaussianKernel[3][3] = {
+                {_mm_set1_ps(1.0f / 16), _mm_set1_ps(2.0f / 16), _mm_set1_ps(1.0f / 16)},
+                {_mm_set1_ps(2.0f / 16), _mm_set1_ps(4.0f / 16), _mm_set1_ps(2.0f / 16)},
+                {_mm_set1_ps(1.0f / 16), _mm_set1_ps(2.0f / 16), _mm_set1_ps(1.0f / 16)}};
+
+#pragma omp parallel for collapse(2)
+            for (int y = 1; y < renderSettings.resolution[1] - 1; y++)
+            {
+                for (int x = 1; x < renderSettings.resolution[0] - 1; x++)
+                {
+                    __m128 sum = _mm_setzero_ps();
+
+                    for (int ky = -1; ky <= 1; ky++)
+                    {
+                        for (int kx = -1; kx <= 1; kx++)
+                        {
+                            __m128 pixel = imageData[x + kx][y + ky];
+                            sum = _mm_add_ps(sum, _mm_mul_ps(pixel, gaussianKernel[ky + 1][kx + 1]));
+                        }
+                    }
+
+                    smoothedImageData[x][y] = sum;
+                }
+            }
+
+            std::cout << "Smooting done in " << (omp_get_wtime() - starttime) << std::endl;
+        }
+
+        starttime = omp_get_wtime();
+
+        // Bilddaten zu Strings wandeln, Zeilen in werden parallelisiert
+#pragma omp parallel
+        {
+            std::vector<char> buffer(renderSettings.resolution[0] * 12); // Preallocate thread-local buffer
+            char *buf_ptr;
+
+#pragma omp for
+            for (int y = 0; y < renderSettings.resolution[1]; y++)
+            {
+                buf_ptr = buffer.data();
+                for (int x = 0; x < renderSettings.resolution[0]; x++)
+                {
+                    float components[4];
+                    if (renderSettings.smoothing)
+                    {
+                        _mm_storeu_ps(components, smoothedImageData[x][y]);
+                    }
+                    else
+                    {
+                        _mm_storeu_ps(components, imageData[x][y]);
+                    }
+
+                    int r = std::min(255, std::max(0, static_cast<int>(components[0])));
+                    int g = std::min(255, std::max(0, static_cast<int>(components[1])));
+                    int b = std::min(255, std::max(0, static_cast<int>(components[2])));
+
+                    buf_ptr += std::snprintf(buf_ptr, 12, "%d %d %d ", r, g, b);
+                }
+                rows[y] = std::string(buffer.data(), buf_ptr - buffer.data());
+            }
+        }
+        std::cout << "Stringing done in " << (omp_get_wtime() - starttime) << std::endl;
+
+        // Free all allocated memory
+        for (int x = 0; x < renderSettings.resolution[0]; x++)
+        {
+            free(imageData[x]);
+            free(smoothedImageData[x]);
+        }
+
+        free(imageData);
+        free(smoothedImageData);
 
         free_aligned(sceneMemory);
         free_aligned(skybox_colors);

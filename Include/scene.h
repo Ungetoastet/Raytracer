@@ -206,6 +206,7 @@ public:
     {
         this->rs = rs;
         parseFromFile(path_to_file);
+        std::cout << "Parsed " << objects.size() << " objects and " << materials.size() << " materials." << std::endl;
     }
     Scene() {};
     void cleanup();

@@ -14,9 +14,19 @@ Das Projekt kann mit cmake wie folgt gebuildet werden.
 Öffnen Sie ein Terminal im Projekt Ordner.
 Dann:
 
-1. `cd Build`
-2. `cmake ..`
-3. `make`
+## Linux
+
+1. `mkdir Build`
+2. `cd Build`
+3. `cmake ..`
+4. `make`
+
+## Windows
+
+1. `mkdir Build`
+2. `cd Build`
+3. `cmake .. -G "MinGW Makefiles"`
+4. `make`
 
 Danach kann das Programm [ausgeführt werden](README.md#Ausführen).
 

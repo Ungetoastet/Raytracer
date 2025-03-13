@@ -84,6 +84,7 @@ private:
 
     void SetSupersampling(std::map<std::string, std::string> xml_params)
     {
+        supersampling_steps = -1;
         for (const auto &[key, value] : xml_params)
         {
             if (key == "steps")
@@ -95,10 +96,15 @@ private:
                 std::cerr << "RENDERSETTINGS ERROR: UNKNOWN SUPERSAMPLING PARAMETER" << std::endl;
             }
         }
+        if (supersampling_steps == -1)
+        {
+            std::cerr << "RENDERSETTINGS ERROR: MISSING SUPERSAMPLING PARAMETER STEPS" << std::endl;
+        }
     }
 
     void SetBounces(std::map<std::string, std::string> xml_params)
     {
+        bounces = -1;
         for (const auto &[key, value] : xml_params)
         {
             if (key == "count")
@@ -110,10 +116,16 @@ private:
                 std::cerr << "RENDERSETTINGS ERROR: UNKNOWN BOUNCES PARAMETER" << std::endl;
             }
         }
+        if (bounces == -1)
+        {
+            std::cerr << "RENDERSETTINGS ERROR: MISSING BOUNCES PARAMETER COUNT" << std::endl;
+        }
     }
 
     void SetScatter(std::map<std::string, std::string> xml_params)
     {
+        scatterbase = -1;
+        scatterredux = -1;
         for (const auto &[key, value] : xml_params)
         {
             if (key == "base")
@@ -128,6 +140,10 @@ private:
             {
                 std::cerr << "RENDERSETTINGS ERROR: UNKNOWN SCATTER PARAMETER" << std::endl;
             }
+        }
+        if (scatterbase == -1 || scatterredux == -1)
+        {
+            std::cerr << "RENDERSETTINGS ERROR: MISSING SCATTER PARAMETERS" << std::endl;
         }
     }
 
